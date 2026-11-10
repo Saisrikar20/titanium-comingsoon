@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Titanium 27 — Coming Soon</title>
+  <meta name="description" content="Titanium 27 is docking soon. Stay tuned." />
+  <link rel="preload" as="image" href="assets/station-wide.webp" />
+  <link rel="preload" as="image" href="assets/logo-titanium.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Michroma&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="stage" id="stage">
+    <!-- deep space behind everything -->
+    <canvas id="stars" class="stars" aria-hidden="true"></canvas>
+    <div class="earth-wrap" id="earthWrap" aria-hidden="true"><div class="earth"></div></div>
+
+    <!-- coming soon -->
+    <section class="cs" id="cs">
+      <h1 class="cs-title" id="csTitle">Coming Soon</h1>
+    </section>
+    <p class="cs-year" id="csYear">2027</p>
+
+    <!-- the station, seen through a TITANIUM-shaped window -->
+    <div class="hero-glow" id="heroGlow">
+      <div class="hero" id="hero">
+        <img class="hero-img" id="heroImg" src="assets/station-wide.webp" alt="Titanium space station" />
+        <div class="hero-tint"></div>
+        <div class="hero-fill" id="heroFill"></div>
+      </div>
+    </div>
+
+    <!-- HUD shown only on the opening frame -->
+    <div class="hud" id="hud" aria-hidden="true">
+      <div class="hud-tl">TITANIUM STATION</div>
+      <div class="hud-tr">SECTOR 27 · ORBIT LOCKED</div>
+      <div class="hud-frame"></div>
+    </div>
+
+
+    <div class="scan" aria-hidden="true"></div>
+  </main>
+
+  <script src="main.js"></script>
+</body>
+</html>
