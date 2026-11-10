@@ -100,12 +100,33 @@ html, body { height: 100%; overflow: hidden; }
   position: absolute; inset: 0;
   width: 100%; height: 100%;
   object-fit: cover;
-  transform-origin: 50% 50%;
+  transform-origin: 50% 44%;   /* where the streaks converge */
   will-change: transform;
 }
-.hero-tint {
+.cam {
+  position: absolute; inset: -4%;           /* slack so shake/roll never shows an edge */
+  transform-origin: 50% 44%;
+  will-change: transform;
+}
+/* rushing copies: driven from main.js so they speed up with the flight */
+.hero-rush {
   position: absolute; inset: 0;
-  background: radial-gradient(ellipse at 50% 50%, transparent 45%, rgba(2,4,10,0.55) 100%);
+  width: 100%; height: 100%;
+  object-fit: cover;
+  transform-origin: 50% 44%;
+  mix-blend-mode: screen;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+/* soft glowing core at the vanishing point */
+.hero-core {
+  position: absolute; left: 50%; top: 44%;
+  width: 30vmax; height: 30vmax;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.7) 0%, rgba(210,225,255,0.3) 12%, rgba(150,170,255,0.08) 34%, transparent 62%);
+  mix-blend-mode: screen;
+  opacity: 0.6;
 }
 /* metallic fill the logo turns into */
 .hero-fill {
@@ -125,6 +146,14 @@ html, body { height: 100%; overflow: hidden; }
 .hud { position: absolute; inset: 0; pointer-events: none; font-size: 11px; letter-spacing: 0.28em; color: var(--dim); }
 .hud-tl { position: absolute; top: 30px; left: 34px; color: var(--ink); }
 .hud-tr { position: absolute; top: 30px; right: 34px; }
+/* helmet visor: curved glass reflection + slight edge falloff */
+.visor {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(120% 95% at 50% 46%, transparent 62%, rgba(2, 6, 16, 0.45) 100%),
+    radial-gradient(70% 38% at 30% 8%, rgba(255, 255, 255, 0.07), transparent 70%),
+    linear-gradient(115deg, transparent 18%, rgba(255, 255, 255, 0.05) 26%, transparent 34%);
+}
 .hud-frame {
   position: absolute; inset: 16px;
   border: 1px solid rgba(var(--cyan), 0.55);
@@ -139,13 +168,6 @@ html, body { height: 100%; overflow: hidden; }
     linear-gradient(#000 0 0) top right / 70px 70px no-repeat,
     linear-gradient(#000 0 0) bottom left / 70px 70px no-repeat,
     linear-gradient(#000 0 0) bottom right / 70px 70px no-repeat;
-}
-
-/* ---------- Scanlines ---------- */
-.scan {
-  position: absolute; inset: 0; pointer-events: none;
-  background: repeating-linear-gradient(to bottom, rgba(255,255,255,0.025) 0 1px, transparent 1px 3px);
-  mix-blend-mode: overlay;
 }
 
 @media (max-width: 640px) {

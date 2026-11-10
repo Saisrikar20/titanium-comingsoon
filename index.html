@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Titanium 27 — Coming Soon</title>
   <meta name="description" content="Titanium 27 is docking soon. Stay tuned." />
-  <link rel="preload" as="image" href="assets/station-wide.webp" />
+  <link rel="preload" as="image" href="assets/warp.webp" />
   <link rel="preload" as="image" href="assets/logo-titanium.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -24,24 +24,30 @@
     </section>
     <p class="cs-year" id="csYear">2027</p>
 
-    <!-- the station, seen through a TITANIUM-shaped window -->
+    <!-- the warp tunnel, seen through a TITANIUM-shaped window -->
     <div class="hero-glow" id="heroGlow">
       <div class="hero" id="hero">
-        <img class="hero-img" id="heroImg" src="assets/station-wide.webp" alt="Titanium space station" />
-        <div class="hero-tint"></div>
+        <!-- "camera": everything inside moves together (push-in, shake, roll) -->
+        <div class="cam" id="cam">
+          <img class="hero-img" id="heroImg" src="assets/warp.webp" alt="Light streaks rushing past at warp speed" />
+          <!-- two copies rushing outward = live zoom-blur; they speed up as you accelerate -->
+          <img class="hero-rush" id="rushA" src="assets/warp.webp" alt="" />
+          <img class="hero-rush" id="rushB" src="assets/warp.webp" alt="" />
+          <div class="hero-core" id="core"></div>
+        </div>
         <div class="hero-fill" id="heroFill"></div>
       </div>
     </div>
 
     <!-- HUD shown only on the opening frame -->
     <div class="hud" id="hud" aria-hidden="true">
-      <div class="hud-tl">TITANIUM STATION</div>
-      <div class="hud-tr">SECTOR 27 · ORBIT LOCKED</div>
+      <div class="hud-tl">TITANIUM 27</div>
+      <div class="hud-tr">WARP DRIVE · ENGAGED</div>
+      <div class="visor"></div>
       <div class="hud-frame"></div>
     </div>
 
 
-    <div class="scan" aria-hidden="true"></div>
   </main>
 
   <script src="main.js"></script>

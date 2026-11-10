@@ -1,7 +1,7 @@
 # Titanium 27 — Coming Soon
 
 The coming-soon page for **Titanium 2027**. It's one screen with a sci-fi
-intro that plays by itself on load: the view of the space station shrinks into a
+intro that plays by itself on load: a warp-speed light tunnel shrinks into a
 cutout shaped like the **TITANIUM** letters, the letters turn polished silver,
 Earth rises from below, and **2027 · COMING SOON** fades in.
 
@@ -16,15 +16,15 @@ stays on the final screen.
 
 | Time (approx.) | What you see |
 | --- | --- |
-| 0 – 1.6 s | Full-screen space station view with a cyan HUD frame and labels |
-| 1.7 – 5.2 s | The station shrinks into the TITANIUM letters while stars streak past |
+| 0 – 1.6 s | First-person view down a warp tunnel, seen through a helmet visor with a cyan HUD frame. You accelerate forward with a slow zero-g roll |
+| 1.7 – 5.2 s | Still accelerating, you fly into the TITANIUM letters as the tunnel shrinks into them, while stars streak past |
 | 4.3 – 5.6 s | The letters fill with glowing silver, with a light sweep across them |
 | 4.2 – 7.8 s | Earth rises from the bottom of the screen |
 | 5.2 – 6.7 s | **2027** fades in under the logo |
 | 5.4 – 7.8 s | **COMING SOON** fades in with a cyan → blue → violet gradient |
 | After | Final screen stays up; Earth turns slowly and the logo shine keeps sweeping |
 
-- The intro waits for the station image to load before it starts, so the opening is never blank.
+- The intro waits for the tunnel image to load before it starts, so the opening is never blank.
 - Visitors with **Reduce motion** turned on in their system settings go straight to the final screen.
 - The layout adapts to phones (logo, text and Earth are resized and repositioned below 640 px wide).
 
@@ -35,10 +35,11 @@ stays on the final screen.
 ```
 titanium-27/
 ├── index.html              Page markup (stage, Earth, logo cutout, HUD, text)
-├── style.css               Layout, colours, Earth, silver fill, HUD, scanlines
+├── style.css               Layout, colours, Earth, warp motion, silver fill, HUD
 ├── main.js                 Timeline, logo-cutout zoom, starfield
 └── assets/
-    ├── station-wide.webp   Space station view (landscape, 2728×1536)
+    ├── warp.webp           Warp-speed light tunnel (landscape, 2560×1440)
+    ├── station-wide.webp   Earlier space station view (not used right now)
     ├── logo-titanium.png   TITANIUM wordmark with transparent background (used as the cutout shape)
     └── earth-disc.webp     Earth photo cropped to a circle (1340×1340)
 ```
@@ -73,6 +74,7 @@ It's a static site, so any static host works:
 | To change… | Edit |
 | --- | --- |
 | Pause before the transition | `HOLD` in `main.js` (seconds) |
+| Flight feel (speed-up, roll) | the "first-person flight" block in `render()` in `main.js` |
 | Transition length | `DUR` in `main.js` (seconds) |
 | Order and overlap of each stage | the `seg(p, start, end)` ranges in `render()` in `main.js` (0 = start of transition, 1 = end) |
 | Final logo size and position | `finalLogo()` in `main.js` |
@@ -81,7 +83,8 @@ It's a static site, so any static host works:
 | "COMING SOON" gradient colours | `.cs-title` in `style.css` **and** the `radial-gradient(...)` line for `csTitle` in `main.js` (the JS one animates it, so change both) |
 | Accent / glow colour | `--cyan` at the top of `style.css` |
 | HUD labels on the opening frame | `.hud` block in `index.html` |
-| Station, logo or Earth image | swap the file in `assets/` and keep the same name |
+| Opening image (seen through the letters) | `src` of `#heroImg` and the `preload` link in `index.html` |
+| Logo or Earth image | swap the file in `assets/` and keep the same name |
 
 **Changing the logo:** the cutout is shaped by `assets/logo-titanium.png`, so it
 needs a **transparent background**. The zoom starts from a solid point inside
@@ -104,5 +107,6 @@ Safari.
 
 - **Earth photo**: Apollo 17 "Blue Marble" (AS17-148-22727), NASA. Restored version by Toby Ord, from [tobyord.com/earth](https://www.tobyord.com/earth).
 - **Font**: [Michroma](https://fonts.google.com/specimen/Michroma) by Vernon Adams, served from Google Fonts (SIL Open Font License).
+- **Warp tunnel image**: "A purple and blue background with lines of light" by [Anton Filatov](https://unsplash.com/@antony123antony) on [Unsplash](https://unsplash.com/photos/a-purple-and-blue-background-with-lines-of-light-O_5SJuSOxZA), free to use under the Unsplash License (colour-graded with extra brightness, bloom and a bright core).
 - **Station artwork and TITANIUM logo**: provided by the Titanium team.
 - **Transition idea**: based on the logo-mask transition from the Titanium 2026 site.

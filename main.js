@@ -10,7 +10,7 @@
 
   const els = {
     stage: $("stage"),
-    hero: $("hero"), heroImg: $("heroImg"), heroFill: $("heroFill"), heroGlow: $("heroGlow"),
+    hero: $("hero"), heroImg: $("heroImg"), cam: $("cam"), rushA: $("rushA"), rushB: $("rushB"), core: $("core"), heroFill: $("heroFill"), heroGlow: $("heroGlow"),
     hud: $("hud"),
     cs: $("cs"), csTitle: $("csTitle"), csYear: $("csYear"),
     earthWrap: $("earthWrap"),
@@ -75,6 +75,7 @@
   const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
   let t0 = performance.now();
   let cur = 0;
+  let rushPhase = 0;
 
   /* Render ------------------------------------------------------------ */
   let last = performance.now();
@@ -103,10 +104,28 @@
       els.hero.style.webkitMaskSize = size; els.hero.style.maskSize = size;
       els.hero.style.webkitMaskPosition = pos; els.hero.style.maskPosition = pos;
     }
-    els.heroImg.style.transform = `scale(${lerp(1.25, 1, mp).toFixed(4)})`;
+    const fp = easeOut(seg(p, 0.42, 0.62)); // silver-fill progress (used below too)
+
+    /* first-person flight: you accelerate down the tunnel and keep flying into the letters */
+    const secs = (now - t0) / 1000;
+    const thrust = easeInOut(clamp(secs / (HOLD + DUR * 0.55))); // 0 → 1 as you reach the logo
+    const settle = 1 - fp;                                       // calms once the letters turn silver
+    const push = Math.exp(0.55 * thrust) * (1 + 0.015 * Math.sin(secs * 1.3));
+    // slow, smooth roll like drifting in zero-g
+    const roll = 0.6 * Math.sin(secs * 0.8) * settle;
+    els.cam.style.transform = reduceMotion ? "none"
+      : `rotate(${roll.toFixed(3)}deg) scale(${push.toFixed(4)})`;
+
+    // streaks rush past faster and faster
+    rushPhase += dt * lerp(0.9, 2.8, thrust);
+    for (const [el, off] of [[els.rushA, 0], [els.rushB, 0.5]]) {
+      const f = (rushPhase + off) % 1;
+      el.style.transform = `scale(${(1 + (0.25 + 0.2 * thrust) * f).toFixed(4)})`;
+      el.style.opacity = (Math.sin(Math.PI * f) * lerp(0.28, 0.5, thrust) * settle).toFixed(3);
+    }
+    els.core.style.opacity = (lerp(0.45, 0.8, thrust) * (0.9 + 0.1 * Math.sin(secs * 9))).toFixed(3);
 
     /* 2. letters turn to polished titanium (0.42 → 0.62) */
-    const fp = easeOut(seg(p, 0.42, 0.62));
     els.heroFill.style.opacity = fp.toFixed(3);
     els.heroGlow.style.filter = fp > 0.01
       ? `drop-shadow(0 0 ${(18 * fp).toFixed(1)}px rgba(106,216,255,${(0.45 * fp).toFixed(2)}))`
