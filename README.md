@@ -16,17 +16,34 @@ stays on the final screen.
 
 | Time (approx.) | What you see |
 | --- | --- |
-| 0 – 1.6 s | First-person view down a warp tunnel, seen through a helmet visor with a cyan HUD frame. You accelerate forward with a slow zero-g roll |
-| 1.7 – 5.2 s | Still accelerating, you fly into the TITANIUM letters as the tunnel shrinks into them, while stars streak past |
-| 4.3 – 5.6 s | The letters fill with glowing silver, with a light sweep across them |
-| 4.2 – 7.8 s | Earth rises from the bottom of the screen |
-| 5.2 – 6.7 s | **2027** fades in under the logo |
-| 5.4 – 7.8 s | **COMING SOON** fades in with a cyan → blue → violet gradient |
-| After | Final screen stays up; Earth turns slowly and the logo shine keeps sweeping |
+| 0 – 1.6 s | First-person view down a warp tunnel through a helmet visor, with coordinates and a speed readout. You start to accelerate with a slow zero-g roll |
+| 1.7 – 4.7 s | Hyperspace streaks stretch as you speed up, and you fly into the TITANIUM letters. The move builds slowly, rushes through the middle and lands smoothly on the title |
+| 4.0 – 5.1 s | The letters turn to polished titanium (chrome band, blue sky reflection, moving highlight) |
+| 4.7 s | **Title lock:** a short lens flare and glow, and the stars drop out of warp |
+| 3.9 – 7.5 s | Earth rises with a sunrise on its limb, a layered blue atmosphere and drifting clouds, then a slow camera push-in |
+| 4.9 – 6.3 s | **2027** fades in under the logo |
+| 5.2 – 7.5 s | **COMING SOON** fades in with a cyan → blue → violet gradient. One light pass crosses it as it lands, and a thin energy line draws out beneath |
+| After | Calm final frame: COMING SOON glows softly, nebula haze drifts, clouds move and the logo shine sweeps |
 
 - The intro waits for the tunnel image to load before it starts, so the opening is never blank.
 - Visitors with **Reduce motion** turned on in their system settings go straight to the final screen.
+- **Sound** is off by default because browsers block audio until the visitor interacts. The speaker button (bottom right) turns it on and replays the intro, so the audio lines up with the picture. Click again to mute.
 - The layout adapts to phones (logo, text and Earth are resized and repositioned below 640 px wide).
+
+---
+
+## Sound design
+
+All sound is generated live in the browser with the Web Audio API, so there are no audio files to load or license.
+
+| When | Sound |
+| --- | --- |
+| Throughout | Deep filtered rumble and a low breathing drone |
+| 0 – 4.7 s | Sci-fi engine rising in pitch, plus an airy riser that climbs to the hit, building tension |
+| 1.3 s | Whoosh into the jump |
+| Just before 4.7 s | Everything drops away for a beat… |
+| 4.7 s | …then a bass impact with a reverb tail as the title locks |
+| 5.2 – 5.6 s | Soft whoosh and shimmer as COMING SOON appears |
 
 ---
 
@@ -35,13 +52,15 @@ stays on the final screen.
 ```
 titanium-27/
 ├── index.html              Page markup (stage, Earth, logo cutout, HUD, text)
-├── style.css               Layout, colours, Earth, warp motion, silver fill, HUD
-├── main.js                 Timeline, logo-cutout zoom, starfield
+├── style.css               Layout, colours, nebula, Earth and clouds, silver fill, flare, HUD, film grade
+├── main.js                 Timeline, logo-cutout zoom, stars and dust, hyperspace streaks, sound
 └── assets/
     ├── warp.webp           Warp-speed light tunnel (landscape, 2560×1440)
     ├── station-wide.webp   Earlier space station view (not used right now)
     ├── logo-titanium.png   TITANIUM wordmark with transparent background (used as the cutout shape)
-    └── earth-disc.webp     Earth photo cropped to a circle (1340×1340)
+    ├── earth-surface.webp  Earth with the clouds softened (base layer)
+    ├── earth-clouds.webp   Earth's clouds on a transparent layer (drifts over the surface)
+    └── earth-disc.webp     Original Earth photo cropped to a circle (source for the two above)
 ```
 
 ---
@@ -75,6 +94,11 @@ It's a static site, so any static host works:
 | --- | --- |
 | Pause before the transition | `HOLD` in `main.js` (seconds) |
 | Flight feel (speed-up, roll) | the "first-person flight" block in `render()` in `main.js` |
+| Title-lock moment (flare, glow, bass hit) | `T_IMPACT` near the top of `main.js` |
+| Cloud drift speed and amount | `.clouds` and `@keyframes cloud-drift` in `style.css` |
+| Film grain and vignette strength | `.grade` `opacity` in `style.css` |
+| Sound levels and timing | the `Sound` class in `main.js` (`play()` lists every cue) |
+| HUD coordinates | `.hud-bl` in `index.html` (currently Chennai) |
 | Transition length | `DUR` in `main.js` (seconds) |
 | Order and overlap of each stage | the `seg(p, start, end)` ranges in `render()` in `main.js` (0 = start of transition, 1 = end) |
 | Final logo size and position | `finalLogo()` in `main.js` |
