@@ -21,21 +21,353 @@
     <video class="galaxy" id="galaxy" src="assets/galaxy.mp4" poster="assets/galaxy-poster.jpg"
            autoplay muted loop playsinline preload="auto" aria-hidden="true"></video>
 
-    <!-- coming soon -->
-    <section class="cs" id="cs">
-      <h1 class="cs-title" id="csTitle">Coming Soon</h1>
-      <div class="energy" id="energy" aria-hidden="true"></div>
-    </section>
-    <p class="cs-year" id="csYear">2027</p>
+    <!-- 3D Spaceman (interactive, greeting with palm facing screen, turns and zooms to back of head) -->
+    <canvas id="spacemanCanvas" class="spaceman-canvas" aria-hidden="true"></canvas>
 
-    <!-- deep space flight, seen through a TITANIUM-shaped window -->
-    <div class="hero-glow" id="heroGlow">
-      <div class="hero" id="hero">
-        <!-- "camera": everything inside moves together (slow zero-g roll) -->
-        <div class="cam" id="cam">
-          <canvas class="hero-stars" id="heroStars" aria-hidden="true"></canvas>
+    <!-- SVG Definitions for Curved Visor Clipping & Neon Glows -->
+    <svg style="position: absolute; width: 0; height: 0; pointer-events: none;" aria-hidden="true">
+      <defs>
+        <clipPath id="visorCurvedClip" clipPathUnits="objectBoundingBox">
+          <path d="M 0.045,0.029 Q 0.5,0.084 0.955,0.029 Q 0.992,0.029 0.996,0.078 L 0.996,0.884 Q 0.992,0.935 0.955,0.935 Q 0.5,0.990 0.045,0.935 Q 0.008,0.935 0.004,0.884 L 0.004,0.078 Q 0.008,0.029 0.045,0.029 Z" />
+        </clipPath>
+      </defs>
+    </svg>
+
+    <!-- Cockpit AR Cylindrical Curved Viewport -->
+    <div class="ar-cockpit" id="arCockpit" aria-hidden="true">
+      <!-- Curved Holographic Visor Screen -->
+      <div class="ar-screen" id="arScreen">
+        <!-- SVG Curved Visor Frame, Glowing Neon Arc, Corner Brackets & Cyber Grid -->
+        <svg class="ar-visor-svg" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <filter id="neonCyanGlow" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur1" />
+              <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur2" />
+              <feGaussianBlur in="SourceGraphic" stdDeviation="16" result="blur3" />
+              <feMerge>
+                <feMergeNode in="blur3" />
+                <feMergeNode in="blur2" />
+                <feMergeNode in="blur1" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            <filter id="neonRedGlow" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="3.5" result="blur1" />
+              <feGaussianBlur in="SourceGraphic" stdDeviation="9" result="blur2" />
+              <feGaussianBlur in="SourceGraphic" stdDeviation="18" result="blur3" />
+              <feMerge>
+                <feMergeNode in="blur3" />
+                <feMergeNode in="blur2" />
+                <feMergeNode in="blur1" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          <!-- Outer Curved Screen Rim Outline with subtle glow -->
+          <path class="ar-svg-rim"
+                d="M 45,18 Q 500,52 955,18 Q 992,18 996,48 L 996,548 Q 992,580 955,580 Q 500,614 45,580 Q 8,580 4,548 L 4,48 Q 8,18 45,18 Z"
+                fill="none" stroke="rgba(0, 229, 255, 0.42)" stroke-width="1.8" />
+
+          <!-- Top-Center Glowing Cyan Neon Arc right above the tabs -->
+          <path class="ar-svg-top-arc-glow"
+                d="M 345,47 Q 500,58 655,47"
+                fill="none" stroke="#00f0ff" stroke-width="3.8" stroke-linecap="round"
+                filter="url(#neonCyanGlow)" />
+          <path class="ar-svg-top-arc-core"
+                d="M 345,47 Q 500,58 655,47"
+                fill="none" stroke="#ffffff" stroke-width="1.3" stroke-linecap="round" />
+
+          <!-- Top-Left Neon Red/Coral Chamfered Bracket with 45-deg corner -->
+          <path class="ar-svg-red-bracket"
+                d="M 240,22 L 56,22 L 20,58 L 20,140"
+                fill="none" stroke="#ff2a4b" stroke-width="4" stroke-linecap="round"
+                filter="url(#neonRedGlow)" />
+          <path d="M 240,22 L 56,22 L 20,58 L 20,140"
+                fill="none" stroke="#ffd0d8" stroke-width="1.2" stroke-linecap="round" />
+          <path d="M 240,22 L 256,15" fill="none" stroke="#ff5a22" stroke-width="3" filter="url(#neonRedGlow)" />
+
+          <!-- Right Vertical Neon Cyan Rail -->
+          <line x1="995" y1="180" x2="995" y2="400" stroke="#00f0ff" stroke-width="4.5" stroke-linecap="round" filter="url(#neonCyanGlow)" />
+          <line x1="995" y1="180" x2="995" y2="400" stroke="#ffffff" stroke-width="1.3" stroke-linecap="round" />
+
+          <!-- Bottom Right Neon Cyan Corner Bracket -->
+          <path class="ar-svg-cyan-corner"
+                d="M 995,490 L 995,548 Q 992,580 955,580 L 880,580"
+                fill="none" stroke="#00f0ff" stroke-width="4" stroke-linecap="round"
+                filter="url(#neonCyanGlow)" />
+          <path d="M 995,490 L 995,548 Q 992,580 955,580 L 880,580"
+                fill="none" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round" />
+
+          <!-- Subtle Red Circuit Lines in Lower-Left Area -->
+          <g class="ar-svg-circuits" stroke="#ff2a4b" stroke-opacity="0.36" stroke-width="1.2" fill="none">
+            <path d="M 28,170 L 140,170 L 175,205 L 175,260" />
+            <circle cx="175" cy="260" r="2.5" fill="#ff2a4b" />
+            <path d="M 45,215 L 115,215 L 135,235 L 210,235" />
+            <circle cx="210" cy="235" r="2.5" fill="#ff2a4b" />
+            <path d="M 25,480 L 110,480 L 150,520 L 260,520" />
+            <rect x="260" y="517" width="14" height="6" fill="#ff2a4b" fill-opacity="0.8" filter="url(#neonRedGlow)" />
+          </g>
+        </svg>
+
+        <!-- Game-style holographic expansion beam from center -->
+        <div class="ar-expansion-beam" id="arExpBeam"></div>
+
+        <!-- Visor Glass Cloud & Reflection Texture -->
+        <div class="ar-glass-clouds"></div>
+
+        <!-- Top-Left Branding & Telemetry -->
+        <div class="ar-bracket-tl">
+          <div class="ar-tl-brand">
+            <svg class="ar-tl-logo" viewBox="0 0 24 24" width="22" height="22">
+              <path d="M4 5h16v3.2H13.6V20h-3.2V8.2H4V5z" fill="#ffffff" />
+              <rect x="2" y="3" width="20" height="2" fill="#ff2a4b" />
+            </svg>
+            <div class="ar-tl-titles">
+              <div class="ar-tl-name">TITANIUM</div>
+              <div class="ar-tl-sub">Fast & Decentralized</div>
+            </div>
+          </div>
+          <div class="ar-telemetry-box">
+            <div class="ar-telem-line"><span class="ar-dot-red"></span> Decentralized</div>
+            <div class="ar-telem-line">Autonomous</div>
+            <div class="ar-telem-line">Cryptographic Operations</div>
+          </div>
         </div>
-        <div class="hero-fill" id="heroFill"></div>
+
+        <!-- Top Navigation Tabs -->
+        <div class="ar-top-tabs">
+          <span class="ar-tab ar-tab-bracketed">( Info-net )</span>
+          <span class="ar-tab">Contacts</span>
+          <span class="ar-tab-orb" title="Titanium Core">
+            <span class="ar-orb-ring"></span>
+            <span class="ar-orb-core">
+              <svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor">
+                <path d="M12 2L2 7l10 5 10-5-10-5zm0 8.5L4.5 7 12 3.5 19.5 7 12 10.5z"/>
+              </svg>
+            </span>
+          </span>
+          <span class="ar-tab">Gravitation</span>
+          <span class="ar-tab">Boosters</span>
+        </div>
+
+        <!-- Top-Right Status Cluster -->
+        <div class="ar-status-tr">
+          <svg class="ar-ico" viewBox="0 0 24 24" width="14" height="14" title="Signal">
+            <path d="M2 17h3v4H2zm5-4h3v8H7zm5-4h3v12h-3zm5-5h3v17h-3z" fill="currentColor"/>
+          </svg>
+          <svg class="ar-ico" viewBox="0 0 24 24" width="14" height="14" title="Audio">
+            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z" fill="currentColor"/>
+          </svg>
+          <svg class="ar-ico" viewBox="0 0 24 24" width="14" height="14" title="Power">
+            <rect x="2" y="7" width="16" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M20 10v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <rect x="4" y="9" width="11" height="6" rx="1" fill="currentColor"/>
+          </svg>
+          <svg class="ar-ico" viewBox="0 0 24 24" width="14" height="14" title="Fullscreen">
+            <path d="M4 8V4h4m8 0h4v4m0 8v4h-4M8 20H4v-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+
+        <!-- AR Screen Center Interactive Titanium Portal -->
+        <div class="ar-content" id="arContent">
+          <!-- TITANIUM 2027 Heading -->
+          <h1 class="ar-brand">TITANIUM <span class="ar-year">2027</span></h1>
+          <p class="ar-sub-label">Overview with</p>
+          <h2 class="ar-welcome">Welcome back</h2>
+
+          <!-- Interactive Login & Entry Form matching Reference Mockup -->
+          <div class="ar-form-card">
+            <!-- Continue with Google Button -->
+            <button class="ar-btn-google" type="button">
+              <svg class="ar-g-icon" viewBox="0 0 24 24" width="16" height="16">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
+              </svg>
+              <span>Continue with Google</span>
+            </button>
+
+            <!-- Or continue with divider -->
+            <div class="ar-or-divider">
+              <span class="ar-or-line"></span>
+              <span class="ar-or-text">Or continue with</span>
+              <span class="ar-or-line"></span>
+            </div>
+
+            <!-- Email or Username input field -->
+            <div class="ar-input-group">
+              <input type="text" class="ar-input" placeholder="Email or Username" autocomplete="off" />
+            </div>
+
+            <!-- Password input field with eye toggle -->
+            <div class="ar-input-group ar-pass-group">
+              <input type="password" class="ar-input" placeholder="Password" autocomplete="off" />
+              <button class="ar-eye-btn" type="button" aria-label="Toggle password visibility">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+            </div>
+
+            <!-- Sign in Action Button -->
+            <button class="ar-btn-signin" type="button">
+              <span>Sign in</span>
+            </button>
+
+            <!-- Helper Links -->
+            <div class="ar-links">
+              <a href="#forgot" class="ar-link">Forgot your password?</a>
+              <div class="ar-signup-row">
+                <span class="ar-muted">Don't have an account?</span>
+                <a href="#signup" class="ar-link ar-link-accent">Sign up</a>
+              </div>
+              <a href="https://app.titanium.xyz/board" target="_blank" rel="noopener" class="ar-link-domain">app.titanium.xyz/board</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Bar Elements -->
+        <div class="ar-bottom-bar">
+          <!-- Bottom-Left Cluster (Home, Media, Visualizer & Telemetry) -->
+          <div class="ar-bl-cluster">
+            <button class="ar-btn-ico" type="button" title="Home">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>
+              </svg>
+            </button>
+            <button class="ar-btn-ico" type="button" title="Playlist">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M9 18V5l12-2v13M9 9l12-2M6 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zm12-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
+              </svg>
+            </button>
+            <div class="ar-telemetry-pill">
+              <div class="ar-audio-wave">
+                <span></span><span></span><span></span><span></span><span></span>
+              </div>
+              <span class="ar-telem-code">F 1.882-64115</span>
+            </div>
+            <div class="ar-bl-red-tab"></div>
+          </div>
+
+          <!-- Bottom Center Elevated Floating Trapezoid Dock -->
+          <div class="ar-center-dock">
+            <button class="ar-center-dock-item" type="button" title="Layers">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M12 2L2 7l10 5 10-5-10-5zm0 9l-8.5-4.25L2 7.75 12 12.75l10-5-1.5-1L12 11zm0 5l-8.5-4.25L2 12.75l10 5 10-5-1.5-1L12 16z"/>
+              </svg>
+            </button>
+            <button class="ar-center-dock-item ar-dock-active" type="button" title="Network">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8">
+                <rect x="3" y="3" width="7" height="7" rx="1"/>
+                <rect x="14" y="3" width="7" height="7" rx="1"/>
+                <rect x="3" y="14" width="7" height="7" rx="1"/>
+                <rect x="14" y="14" width="7" height="7" rx="1"/>
+              </svg>
+            </button>
+            <button class="ar-center-dock-item" type="button" title="Radar">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8">
+                <circle cx="12" cy="12" r="9"/>
+                <path d="M12 3v9l6 6"/>
+              </svg>
+            </button>
+            <button class="ar-center-dock-item" type="button" title="Controls">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M4 19h16M7 15l3-6 4 8 4-5"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Bottom Right Utility Dock -->
+          <div class="ar-br-cluster">
+            <div class="ar-br-dock">
+              <button class="ar-br-item" type="button" title="Cloud">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
+                </svg>
+              </button>
+              <button class="ar-br-item" type="button" title="Sliders">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M4 21v-7m0-4V3m8 18v-9m0-4V3m8 18v-5m0-4V3M1 14h6m2-6h6m2 8h6"/>
+                </svg>
+              </button>
+              <button class="ar-br-item" type="button" title="Profile">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                </svg>
+              </button>
+              <button class="ar-br-item" type="button" title="Add">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M12 5v14M5 12h14"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Glass Highlights -->
+        <div class="ar-glass-highlight"></div>
+      </div>
+
+      <!-- Cockpit Flight Deck / Control Console in Foreground -->
+      <div class="cockpit-dash" id="cockpitDash">
+        <svg class="cockpit-svg" viewBox="0 0 1000 160" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="dashBodyGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#141c2c" />
+              <stop offset="40%" stop-color="#0a0f1c" />
+              <stop offset="100%" stop-color="#020408" />
+            </linearGradient>
+            <linearGradient id="handleGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#26344d" />
+              <stop offset="50%" stop-color="#141c2c" />
+              <stop offset="100%" stop-color="#060912" />
+            </linearGradient>
+          </defs>
+
+          <!-- Lower Console Main Deck Base -->
+          <path d="M 120,160 L 220,80 L 780,80 L 880,160 Z" fill="url(#dashBodyGrad)" stroke="#162236" stroke-width="2" />
+
+          <!-- Center Control Yoke / Pod -->
+          <path d="M 340,80 L 375,36 L 625,36 L 660,80 Z" fill="url(#dashBodyGrad)" stroke="rgba(0, 229, 255, 0.55)" stroke-width="1.8" />
+          <!-- Center Pod Glowing Cyan Top Rim -->
+          <path d="M 375,36 L 625,36" stroke="#00f0ff" stroke-width="3" filter="url(#neonCyanGlow)" />
+          <!-- Center Pod Display Slot -->
+          <rect x="420" y="46" width="160" height="24" rx="6" fill="#040810" stroke="rgba(0, 229, 255, 0.45)" stroke-width="1.2" />
+
+          <!-- Left Flight Grip / Handle -->
+          <g class="console-handle-left">
+            <path d="M 235,80 L 285,108 L 275,158 L 240,158 L 250,118 L 205,92 Z" fill="url(#handleGrad)" stroke="#1a2538" stroke-width="1.5" />
+            <!-- Cyan neon contour line on handle -->
+            <path d="M 230,82 L 280,110 L 270,158" fill="none" stroke="#00f0ff" stroke-width="2.5" filter="url(#neonCyanGlow)" />
+            <!-- Pivot bolts -->
+            <circle cx="233" cy="83" r="4" fill="#324564" stroke="#00f0ff" stroke-width="1" />
+            <circle cx="277" cy="110" r="3.5" fill="#324564" stroke="#00f0ff" stroke-width="1" />
+          </g>
+
+          <!-- Right Flight Grip / Handle (Mirror) -->
+          <g class="console-handle-right">
+            <path d="M 765,80 L 715,108 L 725,158 L 760,158 L 750,118 L 795,92 Z" fill="url(#handleGrad)" stroke="#1a2538" stroke-width="1.5" />
+            <!-- Cyan neon contour line on handle -->
+            <path d="M 770,82 L 720,110 L 730,158" fill="none" stroke="#00f0ff" stroke-width="2.5" filter="url(#neonCyanGlow)" />
+            <!-- Pivot bolts -->
+            <circle cx="767" cy="83" r="4" fill="#324564" stroke="#00f0ff" stroke-width="1" />
+            <circle cx="723" cy="110" r="3.5" fill="#324564" stroke="#00f0ff" stroke-width="1" />
+          </g>
+
+          <!-- Outer Left & Right Railing Cyan Glow Bars -->
+          <path d="M 220,80 L 340,80" stroke="#00f0ff" stroke-width="2.5" filter="url(#neonCyanGlow)" />
+          <path d="M 660,80 L 780,80" stroke="#00f0ff" stroke-width="2.5" filter="url(#neonCyanGlow)" />
+        </svg>
+
+        <!-- Console Digital Readout -->
+        <div class="cockpit-dash-label">
+          <span class="console-dot-pulse"></span>
+          <span>COCKPIT VISOR // ACTIVE ORBIT</span>
+        </div>
       </div>
     </div>
 
@@ -71,6 +403,9 @@
     <div class="grade" aria-hidden="true"></div>
   </main>
 
+  <script src="assets/lib/three.min.js"></script>
+  <script src="assets/lib/GLTFLoader.js"></script>
+  <script src="spaceman.js"></script>
   <script src="main.js"></script>
 </body>
 </html>

@@ -14,36 +14,32 @@
 
   const els = {
     stage: $("stage"),
-    hero: $("hero"), cam: $("cam"),
-    heroFill: $("heroFill"), heroGlow: $("heroGlow"), flare: $("flare"),
+    flare: $("flare"),
     hud: $("hud"), vel: $("vel"),
-    cs: $("cs"), csTitle: $("csTitle"), csYear: $("csYear"), energy: $("energy"),
     galaxy: $("galaxy"), snd: $("snd"),
+    arCockpit: $("arCockpit"), arScreen: $("arScreen"), arContent: $("arContent"), cockpitDash: $("cockpitDash"),
+    arExpBeam: $("arExpBeam"),
   };
 
   /* ------------------------------------------------------------------
-   * Timeline (seconds). The page holds, then plays the transition once.
+   * Timeline (seconds).
+   * 0.0s – 2.0s : Spaceman waves palm left and right in center
+   * 2.0s – 4.4s : Turns 180°, hands return to normal, zoom to back of head
+   * 4.4s – 4.8s : Camera glides into helmet visor, model dissolves into 1st person
+   * 4.8s – 6.8s : EXACT 2s GAP: Suspended in cockpit looking at Earth & orbit
+   * 6.8s+       : GAME AR CYLINDRICAL CURVED SCREEN OPENS & LOCKS IN!
    * ------------------------------------------------------------------ */
-  const HOLD = 1.6;                       // seconds in the tunnel before the transition starts
-  const DUR = 6.5;                        // seconds for the whole transition
-  const at = (p) => HOLD + p * DUR;       // transition progress → seconds
-  const T_IMPACT = at(0.48);              // the title locks in: flare, glow, bass hit
-  const T_CS = at(0.56);                  // COMING SOON starts to appear
-  const T_CS_FULL = at(0.9);              // COMING SOON fully revealed
+  const HOLD = 2.0;                       // greeting hold, then begins turn & zoom
+  const T_ZOOM_HEAD = 4.4;                // reaches back of head
+  const T_ENTER_VISOR = 4.8;              // enters 1st-person visor
+  const T_AR_REVEAL = 6.8;                // 2s gap after visor entry -> AR cylindrical screen opens!
+  const T_IMPACT = T_AR_REVEAL;
+  const DUR = 5.0;
+  const at = (p) => HOLD + p * DUR;
   const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  /* Logo mask geometry ------------------------------------------------ */
-  const LOGO_AR = 294 / 1218;            // height / width of logo-titanium.png
-  const ANCHOR = { x: 0.546, y: 0.486 }; // solid point inside the letters — the zoom pivots here
-  const ANCHOR_R = 39 / 1218;            // radius of solid area around it, as a fraction of logo width
 
   let vw = innerWidth, vh = innerHeight;
   const mobile = () => vw <= 640;
-  function finalLogo() {
-    const w = Math.min(560, vw * (mobile() ? 0.84 : 0.6));
-    const cy = vh * (mobile() ? 0.3 : 0.27);
-    return { w, h: w * LOGO_AR, left: (vw - w) / 2, top: cy - (w * LOGO_AR) / 2 };
-  }
 
   function sizeCanvas(c) {
     const dpr = Math.min(devicePixelRatio || 1, 2);
@@ -299,99 +295,199 @@
 
   /* ------------------------------------------------------------------ */
   const space = new Space($("stars"), 1500, 40, 0.15);
-  const flight = new Space($("heroStars"), 4500, 60, 0.45); // the starfield you fly through at the start
   const fx = new FX($("fx"));
   const sound = new Sound();
 
   let t0 = performance.now(), last = t0;
-  function restart() { t0 = performance.now(); last = t0; }
+  function restart() {
+    t0 = performance.now();
+    last = t0;
+    if (window.__resetSpaceman) window.__resetSpaceman();
+  }
+  window.__syncMainStart = () => {
+    t0 = performance.now();
+    last = t0;
+  };
+  if (window.__spacemanLoaded) {
+    t0 = window.__spacemanTStart || performance.now();
+    last = t0;
+  }
+  window.__getElapsed = () => (performance.now() - t0) / 1000;
+
+  /* Mouse tracking for AR visor parallax */
+  const mouse = { x: 0, y: 0, tx: 0, ty: 0 };
+  window.addEventListener("mousemove", (e) => {
+    mouse.tx = (e.clientX / vw - 0.5) * 2;
+    mouse.ty = (e.clientY / vh - 0.5) * 2;
+  });
 
   /* Render ------------------------------------------------------------ */
   function render(now) {
     const realDt = Math.max(0.001, (now - last) / 1000); last = now;
     const dt = Math.min(0.05, realDt);
     const secs = reduceMotion ? 99 : (now - t0) / 1000;
-    const p = seg(secs, HOLD, HOLD + DUR);
-    const fin = finalLogo();
 
-    /* 1. the tunnel shrinks into the TITANIUM letters (0.02 → 0.48), landing on the title lock */
-    const mp = easeFlight(seg(p, 0.02, 0.48));
-    const startW = (Math.hypot(vw, vh) * 0.62) / ANCHOR_R; // big enough that one solid stem covers the screen
-    const w = Math.exp(lerp(Math.log(startW), Math.log(fin.w), mp));
-    const ax = lerp(vw / 2, fin.left + ANCHOR.x * fin.w, mp);
-    const ay = lerp(vh / 2, fin.top + ANCHOR.y * fin.h, mp);
-    const mx = ax - ANCHOR.x * w, my = ay - ANCHOR.y * w * LOGO_AR;
-    const masked = w * ANCHOR_R < Math.hypot(vw, vh) * 0.55; // before this, one solid stem covers everything
-    els.hero.classList.toggle("unmasked", !masked);
-    if (masked) {
-      const size = `${w.toFixed(1)}px auto`, pos = `${mx.toFixed(1)}px ${my.toFixed(1)}px`;
-      els.hero.style.webkitMaskSize = size; els.hero.style.maskSize = size;
-      els.hero.style.webkitMaskPosition = pos; els.hero.style.maskPosition = pos;
+    // Smooth mouse inertia
+    mouse.x += (mouse.tx - mouse.x) * 0.06;
+    mouse.y += (mouse.ty - mouse.y) * 0.06;
+
+    /* ================================================================
+     * TIMELINE CHOREOGRAPHY:
+     * 0.0s – 2.0s : Spaceman waves palm left and right in center
+     * 2.0s – 4.4s : Turns 180°, hands return to normal, zoom to back of head
+     * 4.4s – 4.8s : Camera glides into helmet visor, model dissolves into 1st person
+     * 4.8s – 6.8s : EXACT 2s GAP: Suspended in cockpit looking at Earth & orbit
+     * 6.8s+       : GAME AR CYLINDRICAL CURVED SCREEN OPENS & LOCKS IN!
+     * ================================================================ */
+
+    // 1. Warp thrust & hyperspace dynamics
+    const inWarp = secs >= HOLD && secs < T_ENTER_VISOR;
+    const warpProgress = seg(secs, HOLD, T_ENTER_VISOR);
+    const thrust = inWarp ? easeFlight(warpProgress) : 0;
+    const settled = secs >= T_AR_REVEAL ? easeOut(seg(secs, T_AR_REVEAL, T_AR_REVEAL + 0.8)) : 0;
+
+    // Camera zero-g roll during flight
+    const roll = 0.5 * Math.sin(secs * 0.7) * (1 - settled);
+    if (els.cam) els.cam.style.transform = reduceMotion ? "none" : `rotate(${roll.toFixed(3)}deg)`;
+
+    // Warp velocity readout
+    if (els.vel) {
+      if (secs < HOLD) {
+        els.vel.textContent = "0.00";
+      } else if (secs < T_ENTER_VISOR) {
+        els.vel.textContent = (0.99 * thrust).toFixed(2);
+      } else {
+        const dockP = seg(secs, T_ENTER_VISOR, T_AR_REVEAL);
+        els.vel.textContent = lerp(0.99, 0.12, dockP).toFixed(2);
+      }
     }
-    const fp = easeOut(seg(p, 0.36, 0.54)); // silver-fill progress
-    const settle = 1 - fp;
 
-    /* first-person flight: cruise through the stars, then accelerate into the letters */
-    const thrust = easeInOut(clamp(secs / T_IMPACT));            // 0 → 1 as you reach the logo
-    const roll = 0.6 * Math.sin(secs * 0.8) * settle;           // slow zero-g drift
-    els.cam.style.transform = reduceMotion ? "none" : `rotate(${roll.toFixed(3)}deg)`;
-    if (fp < 1) { // hidden under the silver fill once the title has locked
-      flight.speed = reduceMotion ? 0.03 : lerp(0.35, 3.4, easeIn(thrust));
-      flight.frame(dt);
+    // 2. Starfield & FX speeds
+    if (inWarp) {
+      space.speed = lerp(0.03, 2.8, thrust);
+    } else if (secs >= T_ENTER_VISOR && secs < T_AR_REVEAL) {
+      const decel = 1 - seg(secs, T_ENTER_VISOR, T_AR_REVEAL);
+      space.speed = 0.03 + 2.8 * decel * decel;
+    } else if (secs >= T_AR_REVEAL) {
+      space.speed = 0.03 + 1.2 * Math.exp(-(secs - T_AR_REVEAL) * 1.8);
+    } else {
+      space.speed = 0.03; // Calm drifting stars during spaceman stages
     }
-    els.vel.textContent = (0.99 * thrust * settle + 0.12 * (1 - settle)).toFixed(2);
-
-    /* 2. title locks in: polished titanium, depth shadow, a short glow kick and lens flare */
-    const kick = secs >= T_IMPACT ? Math.exp(-(secs - T_IMPACT) / 0.45) : 0;
-    els.heroFill.style.opacity = fp.toFixed(3);
-    els.heroGlow.style.filter = fp > 0.01
-      ? `drop-shadow(0 6px 8px rgba(0,0,0,${(0.55 * fp).toFixed(2)})) drop-shadow(0 0 ${(14 * fp + 20 * kick).toFixed(1)}px rgba(106,216,255,${(0.36 * fp + 0.35 * kick).toFixed(2)}))`
-      : "none";
-    const logoCy = fin.top + fin.h / 2;
-    els.flare.style.top = `${logoCy.toFixed(1)}px`;
-    els.flare.style.opacity = (kick * 0.6).toFixed(3);
-    els.flare.style.transform = `translate(-50%, -50%) scaleX(${(0.25 + 0.75 * easeOut(seg(secs, T_IMPACT, T_IMPACT + 0.4))).toFixed(3)})`;
-
-    /* HUD fades as the transition begins */
-    els.hud.style.opacity = (1 - seg(p, 0, 0.12)).toFixed(3);
-
-    /* 2027 just under the logo */
-    const yp = easeOut(seg(p, 0.5, 0.72));
-    els.csYear.style.top = `${(fin.top + fin.h + Math.max(10, fin.w * 0.035)).toFixed(1)}px`;
-    els.csYear.style.opacity = yp.toFixed(3);
-    els.csYear.style.letterSpacing = `${lerp(1.2, 0.55, yp).toFixed(3)}em`;
-
-    /* 3. the galaxy fades up behind the title, with a slow camera push-in for scale */
-    const ep = easeOut(seg(p, 0.36, 0.9));
-    const galaxyPush = 1.08 - 0.08 * ep + 0.05 * easeInOut(seg(secs, at(0.45), at(0.45) + 24));
-    els.galaxy.style.opacity = (0.78 * ep).toFixed(3); // held back so the text stays readable
-    els.galaxy.style.transform = `scale(${galaxyPush.toFixed(4)})`;
-
-    /* 4. COMING SOON: travelling gradient reveal, one light pulse as it lands, then a slow breath */
-    const cp = seg(p, 0.56, 0.9), ce = easeOut(cp);
-    els.cs.style.opacity = clamp(cp * 2.2);
-    els.cs.style.transform = `translateY(${((1 - ce) * 8).toFixed(2)}vh)`;
-    const gy = lerp(200, 52, ce);
-    const since = secs - T_CS_FULL;
-    const sweep = since > 0 ? lerp(-20, 120, seg(since, 0, 1.4)) : -40; // a single light pass as it lands
-    const glow = (since > 0 ? Math.exp(-since / 0.9) : 0) + 0.18 * (0.5 + 0.5 * Math.sin(secs * 0.9)) * ce;
-    els.csTitle.style.backgroundImage =
-      `linear-gradient(100deg, transparent ${(sweep - 9).toFixed(1)}%, rgba(255,255,255,0.7) ${sweep.toFixed(1)}%, transparent ${(sweep + 9).toFixed(1)}%),` +
-      `radial-gradient(circle at 50% ${gy.toFixed(1)}vh, #f2fbff 0, #6ad8ff 30vh, #4d6bff 62vh, #9a46ff 95vh, rgba(40,20,90,0) 130vh)`;
-    els.cs.style.filter = `drop-shadow(0 0 ${(6 + 12 * glow).toFixed(1)}px rgba(106,216,255,${(0.22 + 0.3 * glow).toFixed(2)}))`;
-    const lp = easeOut(seg(p, 0.68, 0.98));
-    els.energy.style.transform = `scaleX(${lp.toFixed(3)})`;
-    els.energy.style.opacity = (lp * 0.6).toFixed(3);
-
-    /* stars: streak during the jump, then decelerate out of warp */
-    space.speed = secs < T_IMPACT ? lerp(0.03, 2.6, easeIn(mp)) : 0.03 + 2.6 * Math.exp(-(secs - T_IMPACT) * 1.6);
     space.frame(dt);
 
+    // Hyperspace streaks
     fx.frame(dt, {
       secs,
-      streakA: reduceMotion ? 0 : lerp(0.2, 0.85, thrust) * settle,
-      streakV: lerp(0.25, 1.9, easeIn(thrust) * 0.6 + thrust * 0.4),
+      streakA: reduceMotion ? 0 : (inWarp ? lerp(0.15, 0.9, thrust) : 0),
+      streakV: lerp(0.25, 2.2, thrust),
     });
+
+    // 3. Opening HUD visor fade
+    if (els.hud) {
+      els.hud.style.opacity = (1 - seg(secs, 0.4, 2.0)).toFixed(3);
+    }
+
+    // 4. Galaxy background fade & push-in behind the AR screen
+    if (els.galaxy) {
+      const gp = easeOut(seg(secs, T_ENTER_VISOR - 0.2, T_ENTER_VISOR + 1.4));
+      const galaxyPush = 1.05 - 0.05 * gp + 0.04 * easeInOut(seg(secs, T_AR_REVEAL, T_AR_REVEAL + 24));
+      els.galaxy.style.opacity = (0.78 * gp).toFixed(3);
+      els.galaxy.style.transform = `scale(${galaxyPush.toFixed(4)})`;
+    }
+
+    // 5. Flare kick at AR screen reveal
+    const kick = secs >= T_AR_REVEAL ? Math.exp(-(secs - T_AR_REVEAL) / 0.45) : 0;
+    if (els.flare) {
+      els.flare.style.top = `${(vh * 0.45).toFixed(1)}px`;
+      els.flare.style.opacity = (kick * 0.85).toFixed(3);
+      els.flare.style.transform = `translate(-50%, -50%) scaleX(${(0.3 + 0.7 * easeOut(seg(secs, T_AR_REVEAL, T_AR_REVEAL + 0.4))).toFixed(3)})`;
+    }
+
+    // 6. GAME OPENING EXPANSION FROM CENTER FOR CYLINDRICAL AR SCREEN
+    if (els.arCockpit && els.arScreen) {
+      if (secs >= T_AR_REVEAL) {
+        els.arCockpit.style.opacity = "1";
+        els.arCockpit.style.pointerEvents = "auto";
+
+        const expandDur = 0.72;
+        const expandP = seg(secs, T_AR_REVEAL, T_AR_REVEAL + expandDur);
+
+        let scaleX = 1, scaleY = 1, glow = 0;
+        if (expandP < 0.45) {
+          // Phase 1: Horizontal slit expands from center line
+          const p1 = expandP / 0.45;
+          const e1 = easeOut(p1);
+          scaleX = lerp(0.02, 1.05, e1);
+          scaleY = lerp(0.015, 0.07, e1);
+          glow = 1.8 * (1 - p1 * 0.25);
+        } else {
+          // Phase 2: Vertical unfolding from center line with elastic game settle
+          const p2 = (expandP - 0.45) / 0.55;
+          const e2 = Math.sin(p2 * Math.PI * 0.5);
+          const overshoot = Math.sin(p2 * Math.PI) * 0.06;
+          scaleX = lerp(1.05, 1.0, p2);
+          scaleY = lerp(0.07, 1.0, e2) + overshoot;
+          glow = lerp(1.2, 0, p2);
+        }
+
+        // Center expansion energy beam dynamics
+        if (els.arExpBeam) {
+          if (expandP < 0.7) {
+            const beamAlpha = 1 - expandP / 0.7;
+            els.arExpBeam.style.opacity = beamAlpha.toFixed(3);
+            els.arExpBeam.style.transform = `translateY(-50%) scaleX(${(scaleX * 1.15).toFixed(3)}) scaleY(${(1 + glow * 3).toFixed(2)})`;
+          } else {
+            els.arExpBeam.style.opacity = "0";
+          }
+        }
+
+        // 3D holographic cylindrical visor perspective tilt with mouse responsiveness
+        const tiltX = lerp(6.0, 2.2, expandP) - mouse.y * 1.8;
+        const tiltY = mouse.x * 2.5;
+        const finalScale = 0.96;
+
+        els.arScreen.style.transform = `rotateX(${tiltX.toFixed(2)}deg) rotateY(${tiltY.toFixed(2)}deg) scaleX(${(scaleX * finalScale).toFixed(4)}) scaleY(${(scaleY * finalScale).toFixed(4)})`;
+        els.arScreen.style.filter = glow > 0.05 ? `drop-shadow(0 0 ${glow * 28}px rgba(0, 229, 255, ${glow * 0.85})) brightness(${1 + glow * 0.35})` : "none";
+
+        // DISPLAY INFO AFTER EXPANSION
+        const infoDelay = 0.52;
+        const infoP = seg(secs, T_AR_REVEAL + infoDelay, T_AR_REVEAL + infoDelay + 0.65);
+        const infoEase = easeOut(infoP);
+
+        if (els.arContent) {
+          els.arContent.style.opacity = infoEase.toFixed(3);
+          const contentTransY = (1 - infoEase) * 16;
+          const contentScale = lerp(0.93, 1.0, infoEase);
+          els.arContent.style.transform = `translateY(${contentTransY.toFixed(1)}px) scale(${contentScale.toFixed(3)})`;
+        }
+
+        // Surrounding HUD elements (tabs, status, docks) cascade in cleanly
+        const hudP = seg(secs, T_AR_REVEAL + 0.42, T_AR_REVEAL + 0.92);
+        const hudEase = easeOut(hudP);
+        const hudElements = els.arScreen.querySelectorAll(".ar-top-tabs, .ar-bracket-tl, .ar-status-tr, .ar-bracket-r, .ar-bottom-bar");
+        hudElements.forEach((el) => {
+          el.style.opacity = hudEase.toFixed(3);
+        });
+
+        // Zero-g floating breath for the cockpit deck
+        if (els.cockpitDash) {
+          const dashP = seg(secs, T_AR_REVEAL + 0.25, T_AR_REVEAL + 0.85);
+          const dashEase = easeOut(dashP);
+          const dashFloat = Math.sin(secs * 1.2) * 2.5;
+          els.cockpitDash.style.opacity = dashEase.toFixed(3);
+          els.cockpitDash.style.transform = `translateX(-50%) translateY(${dashFloat.toFixed(1)}px)`;
+        }
+      } else {
+        els.arCockpit.style.opacity = "0";
+        els.arCockpit.style.pointerEvents = "none";
+        if (els.arExpBeam) els.arExpBeam.style.opacity = "0";
+        if (els.arContent) els.arContent.style.opacity = "0";
+        const hudElements = els.arScreen.querySelectorAll(".ar-top-tabs, .ar-bracket-tl, .ar-status-tr, .ar-bracket-r, .ar-bottom-bar");
+        hudElements.forEach((el) => {
+          el.style.opacity = "0";
+        });
+      }
+    }
 
     requestAnimationFrame(render);
   }
@@ -417,7 +513,7 @@
   // belt and braces for browsers without overflow: clip — never let the stage scroll
   els.stage.addEventListener("scroll", () => { els.stage.scrollTop = 0; els.stage.scrollLeft = 0; });
 
-  addEventListener("resize", () => { vw = innerWidth; vh = innerHeight; space.resize(); flight.resize(); fx.resize(); });
+  addEventListener("resize", () => { vw = innerWidth; vh = innerHeight; space.resize(); fx.resize(); });
 
   restart();
   requestAnimationFrame(render);
