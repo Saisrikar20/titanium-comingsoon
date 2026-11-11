@@ -6,19 +6,14 @@
   const seg = (t, a, b) => clamp((t - a) / (b - a));
   const lerp = (a, b, t) => a + (b - a) * t;
   const easeOut = (p) => 1 - Math.pow(1 - p, 3);
-  const easeIn = (p) => p * p * p;
   const easeInOut = (p) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
-  // long build, fast middle, short smooth landing — used for the flight into the letters
-  const easeFlight = (p) => (p < 0.5 ? 16 * p ** 5 : 1 - Math.pow(-2 * p + 2, 5) / 2);
   const rand = (a, b) => a + Math.random() * (b - a);
 
   const els = {
-    stage: $("stage"),
-    hero: $("hero"), cam: $("cam"),
-    heroFill: $("heroFill"), heroLogo: $("heroLogo"), heroGlow: $("heroGlow"), flare: $("flare"),
-    hud: $("hud"), vel: $("vel"),
+    stage: $("stage"), bg: $("bg"), bgVideo: document.querySelector(".backdrop"), sky: $("sky"),
+    logo: $("logo"),
     cs: $("cs"), csTitle: $("csTitle"), csText: $("csText"), energy: $("energy"),
-    galaxy: $("galaxy"), snd: $("snd"),
+    snd: $("snd"),
   };
 
   /* ------------------------------------------------------------------
@@ -64,26 +59,23 @@
   }
 
   /* ------------------------------------------------------------------
-   * Timeline (seconds). The page holds, then plays the transition once.
+   * Timeline (seconds). The scene appears at once; the logo and COMING SOON ease in.
    * ------------------------------------------------------------------ */
-  const HOLD = 1.6;                       // seconds in the tunnel before the transition starts
-  const DUR = 6.5;                        // seconds for the whole transition
-  const at = (p) => HOLD + p * DUR;       // transition progress → seconds
-  const T_IMPACT = at(0.48);              // the title locks in: flare, glow, bass hit
-  const T_CS = at(0.56);                  // COMING SOON starts to appear
-  const T_CS_FULL = at(0.9);              // COMING SOON fully revealed
+  const T_BG = 1.6;                       // backdrop fully faded in
+  const T_LOGO = 0.5;                     // logo starts to appear
+  const T_HIT = 1.4;                      // the logo lands (soft low hit)
+  const T_LOGO_FULL = 2.0;                // logo fully in
+  const T_CS = 2.0;                       // COMING SOON starts to decrypt
+  const T_CS_FULL = 3.2;                  // COMING SOON fully revealed
   const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  /* Logo mask geometry ------------------------------------------------ */
+  /* Layout -------------------------------------------------------------- */
   const LOGO_AR = 520 / 1280;            // height / width of logo-titanium.png
-  const ANCHOR = { x: 0.541, y: 0.475 }; // solid point inside the letters — the zoom pivots here
-  const ANCHOR_R = 0.029;                  // radius of solid area around it, as a fraction of logo width
-
   let vw = innerWidth, vh = innerHeight;
   const mobile = () => vw <= 640;
   function finalLogo() {
     const w = Math.min(560, vw * (mobile() ? 0.84 : 0.6));
-    const cy = vh * 0.47;                                  // the logo sits on the galaxy core
+    const cy = vh * 0.47;                                  // the logo sits in the middle of the screen
     return { w, h: w * LOGO_AR, left: (vw - w) / 2, top: cy - (w * LOGO_AR) / 2 };
   }
 
@@ -96,110 +88,66 @@
   }
 
   /* ------------------------------------------------------------------
-   * Deep space: coloured stars with twinkle + slow drifting dust
+   * Live sky: twinkling stars drifting at different depths (with a touch of pointer parallax),
+   * and now and then a faint shooting star
    * ------------------------------------------------------------------ */
-  const STAR_TINTS = ["255,255,255", "214,228,255", "180,205,255", "200,190,255", "255,236,214"];
-  class Space {
-    constructor(canvas, stars = 520, dust = 40, boost = 0) {
-      this.c = canvas; this.speed = 0.03; this.boost = boost;
-      this.resize();
-      this.stars = Array.from({ length: stars }, () => this.spawn(true));
-      this.dust = Array.from({ length: dust }, () => this.spawnDust());
+  const STAR_TINTS = ["255,255,255", "205,240,255", "150,225,245", "255,225,190", "255,205,160"];
+  class LiveSky {
+    constructor(canvas, n) {
+      this.c = canvas; this.resize();
+      this.stars = Array.from({ length: n }, () => {
+        const d = Math.pow(Math.random(), 1.6);              // depth: most stars far, a few near
+        return {
+          x: Math.random(), y: Math.random(), d,
+          r: 0.35 + d * 1.5 + Math.pow(Math.random(), 4) * 1.1,
+          a: 0.25 + 0.75 * Math.random() * (0.4 + d),
+          tw: rand(0, 6.28), tws: rand(0.4, 1.4),
+          tint: STAR_TINTS[(Math.random() * STAR_TINTS.length) | 0],
+        };
+      });
+      this.shot = null; this.nextShot = rand(3.5, 6);
+      this.px = 0; this.py = 0;
     }
     resize() { this.ctx = sizeCanvas(this.c); this.w = this.c.clientWidth; this.h = this.c.clientHeight; }
-    spawn(any) {
-      const mag = Math.pow(Math.random(), 3.2); // most stars faint, a few bright
-      return {
-        x: rand(-1, 1), y: rand(-1, 1), z: any ? Math.random() : 1, pz: 1,
-        tw: rand(0, 6.28), tws: rand(0.3, 0.9), mag,
-        tint: STAR_TINTS[(Math.random() * STAR_TINTS.length) | 0],
-      };
-    }
-    spawnDust() {
-      return { x: Math.random(), y: Math.random(), d: rand(0.3, 1), vx: rand(-0.004, 0.004), vy: rand(-0.008, -0.002), r: rand(0.6, 1.8) };
-    }
-    frame(dt) {
-      const { ctx, w, h } = this, cx = w / 2, cy = h / 2, f = Math.max(w, h) * 0.5;
-      ctx.clearRect(0, 0, w, h);
-      const streak = this.speed > 0.5;
-      ctx.globalCompositeOperation = "lighter";
-      for (const s of this.stars) {
-        s.pz = s.z; s.z -= this.speed * dt * 0.25; s.tw += dt * s.tws;
-        if (s.z <= 0.02) { Object.assign(s, this.spawn(false)); continue; }
-        const sx = cx + (s.x / s.z) * f, sy = cy + (s.y / s.z) * f;
-        if (sx < -40 || sx > w + 40 || sy < -40 || sy > h + 40) { Object.assign(s, this.spawn(false)); continue; }
-        const near = 1 - s.z;
-        const a = clamp((near * 1.2 + this.boost) * (0.35 + 0.65 * s.mag + 0.25)) * (0.92 + 0.08 * Math.sin(s.tw));
-        const size = 0.35 + near * 1.1 + s.mag * 1.6;
-        if (streak) {
-          const px = cx + (s.x / s.pz) * f, py = cy + (s.y / s.pz) * f;
-          ctx.strokeStyle = `rgba(${s.tint},${a})`; ctx.lineWidth = size;
-          ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(sx, sy); ctx.stroke();
-        } else {
-          ctx.fillStyle = `rgba(${s.tint},${a})`;
-          ctx.beginPath(); ctx.arc(sx, sy, size * 0.6, 0, 6.283); ctx.fill();
-          if (s.mag > 0.6) { // only the brightest stars get a soft halo
-            const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, size * 4);
-            g.addColorStop(0, `rgba(${s.tint},${a * 0.22})`); g.addColorStop(1, "rgba(0,0,0,0)");
-            ctx.fillStyle = g; ctx.beginPath(); ctx.arc(sx, sy, size * 4, 0, 6.283); ctx.fill();
-          }
-        }
-      }
-      // cosmic dust: tiny out-of-focus motes drifting upward with parallax
-      for (const d of this.dust) {
-        d.x += d.vx * dt * d.d; d.y += d.vy * dt * d.d;
-        if (d.y < -0.05) { d.y = 1.05; d.x = Math.random(); }
-        if (d.x < -0.05) d.x = 1.05; else if (d.x > 1.05) d.x = -0.05;
-        const x = d.x * w, y = d.y * h, r = d.r * (1 + d.d);
-        const g = ctx.createRadialGradient(x, y, 0, x, y, r * 3);
-        g.addColorStop(0, `rgba(170,190,255,${0.1 * d.d})`); g.addColorStop(1, "rgba(0,0,0,0)");
-        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r * 3, 0, 6.283); ctx.fill();
-      }
-      ctx.globalCompositeOperation = "source-over";
-    }
-  }
-
-  /* ------------------------------------------------------------------
-   * Effects layer: hyperspace streaks
-   * ------------------------------------------------------------------ */
-  const STREAK_COLS = ["120,220,255", "150,170,255", "175,120,255", "220,240,255"];
-  class FX {
-    constructor(canvas) {
-      this.c = canvas;
-      this.resize();
-      this.streaks = Array.from({ length: 240 }, () => this.spawnStreak(true));
-    }
-    resize() { this.ctx = sizeCanvas(this.c); this.w = this.c.clientWidth; this.h = this.c.clientHeight; }
-    spawnStreak(any) {
-      const a = rand(0, 6.283), r = Math.sqrt(Math.random()) * 0.9 + 0.08;
-      return { x: Math.cos(a) * r, y: Math.sin(a) * r, z: any ? rand(0.05, 1) : 1, pz: 1, col: STREAK_COLS[(Math.random() * 4) | 0], wd: rand(0.6, 2.2) };
-    }
-    frame(dt, s) {
+    frame(dt, secs, still) {
       const { ctx, w, h } = this;
       ctx.clearRect(0, 0, w, h);
       ctx.globalCompositeOperation = "lighter";
-
-      // hyperspace streaks: length grows with speed → reads as motion blur and acceleration
-      if (s.streakA > 0.01) {
-        const cx = w / 2, cy = h * 0.44, f = Math.max(w, h) * 0.55;
-        for (const k of this.streaks) {
-          k.pz = k.z; k.z -= s.streakV * dt;
-          if (k.z <= 0.03) { Object.assign(k, this.spawnStreak(false)); k.pz = k.z; continue; }
-          const sx = cx + (k.x / k.z) * f, sy = cy + (k.y / k.z) * f;
-          const tail = Math.min(1, k.z + s.streakV * 0.06 + 0.02);
-          const px = cx + (k.x / tail) * f, py = cy + (k.y / tail) * f;
-          if (sx < -200 || sx > w + 200 || sy < -200 || sy > h + 200) { Object.assign(k, this.spawnStreak(false)); continue; }
-          const a = clamp((1 - k.z) * 1.4) * s.streakA;
-          const g = ctx.createLinearGradient(px, py, sx, sy);
-          g.addColorStop(0, `rgba(${k.col},0)`); g.addColorStop(1, `rgba(${k.col},${a})`);
-          ctx.strokeStyle = g; ctx.lineWidth = k.wd * (0.4 + (1 - k.z) * 1.6); ctx.lineCap = "round";
-          ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(sx, sy); ctx.stroke();
+      for (const s of this.stars) {
+        if (!still) {
+          s.x += (0.0035 + 0.012 * s.d) * dt * 0.5; s.y += 0.0012 * dt * s.d * 0.5; s.tw += dt * s.tws;
+          if (s.x > 1.02) s.x -= 1.04; if (s.y > 1.02) s.y -= 1.04;
+        }
+        const sx = s.x * w + this.px * s.d * 16, sy = s.y * h + this.py * s.d * 10;
+        const a = s.a * (0.78 + 0.22 * Math.sin(s.tw));
+        ctx.fillStyle = `rgba(${s.tint},${a.toFixed(3)})`;
+        ctx.beginPath(); ctx.arc(sx, sy, s.r * 0.7, 0, 6.283); ctx.fill();
+        if (s.r > 1.9) {                                     // only the brightest get a soft halo
+          const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, s.r * 4.5);
+          g.addColorStop(0, `rgba(${s.tint},${(a * 0.3).toFixed(3)})`); g.addColorStop(1, "rgba(0,0,0,0)");
+          ctx.fillStyle = g; ctx.beginPath(); ctx.arc(sx, sy, s.r * 4.5, 0, 6.283); ctx.fill();
         }
       }
-
+      if (!still) {
+        if (!this.shot && secs > this.nextShot) {            // launch a shooting star every so often
+          const ang = rand(0.35, 0.6);
+          this.shot = { x: rand(0.05, 0.7) * w, y: rand(0.02, 0.35) * h, vx: Math.cos(ang), vy: Math.sin(ang), t: 0, life: rand(0.7, 1.1), len: rand(120, 200) };
+          this.nextShot = secs + rand(7, 13);
+        }
+        const s = this.shot;
+        if (s) {
+          s.t += dt;
+          const k = s.t / s.life, head = k * 900, tail = Math.max(0, head - s.len);
+          const x1 = s.x + s.vx * head, y1 = s.y + s.vy * head, x0 = s.x + s.vx * tail, y0 = s.y + s.vy * tail;
+          const fade = Math.sin(Math.PI * clamp(k)) * 0.8;
+          const g = ctx.createLinearGradient(x0, y0, x1, y1);
+          g.addColorStop(0, "rgba(180,235,255,0)"); g.addColorStop(1, `rgba(235,250,255,${fade.toFixed(3)})`);
+          ctx.strokeStyle = g; ctx.lineWidth = 1.4; ctx.lineCap = "round";
+          ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+          if (k >= 1) this.shot = null;
+        }
+      }
       ctx.globalCompositeOperation = "source-over";
-
-
     }
   }
 
@@ -251,12 +199,7 @@
       this.stopAll();
 
       // 1. atmospheric ambience: deep filtered rumble + low drone that breathes
-      // a bus for everything except the hit, so it can drop out for a beat before the impact
-      const bed = ctx.createGain(); bed.gain.setValueAtTime(1, t);
-      bed.gain.setValueAtTime(1, t + T_IMPACT - 0.22);
-      bed.gain.linearRampToValueAtTime(0.12, t + T_IMPACT - 0.04);
-      bed.gain.linearRampToValueAtTime(0.85, t + T_IMPACT + 1.2);
-      bed.connect(this.master);
+      const bed = ctx.createGain(); bed.gain.setValueAtTime(1, t); bed.connect(this.master);
       this.bed = bed;
       const amb = this.noiseSrc(); const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 260;
       const ag = ctx.createGain(); ag.gain.setValueAtTime(0, t); ag.gain.linearRampToValueAtTime(0.09, t + 1.2);
@@ -269,39 +212,12 @@
         o.connect(g); this.out(g, 1, 0.2, bed); o.start(t); lfo.start(t);
       }
 
-      // 2. rising engine: detuned saws through a slowly opening filter, peaking at the title lock
-      const eg = ctx.createGain(), ef = ctx.createBiquadFilter(); ef.type = "lowpass"; ef.Q.value = 4;
-      ef.frequency.setValueAtTime(120, t); ef.frequency.exponentialRampToValueAtTime(2600, t + T_IMPACT);
-      ef.frequency.exponentialRampToValueAtTime(220, t + T_IMPACT + 2.5);
-      eg.gain.setValueAtTime(0.0001, t); eg.gain.exponentialRampToValueAtTime(0.05, t + HOLD);
-      eg.gain.exponentialRampToValueAtTime(0.2, t + T_IMPACT - 0.05);
-      eg.gain.exponentialRampToValueAtTime(0.03, t + T_IMPACT + 0.5);
-      eg.gain.exponentialRampToValueAtTime(0.008, t + T_IMPACT + 5);
-      for (const det of [0, 7, -9]) {
-        const o = this.osc("sawtooth", 34);
-        o.detune.value = det;
-        o.frequency.setValueAtTime(34, t); o.frequency.exponentialRampToValueAtTime(118, t + T_IMPACT);
-        o.frequency.exponentialRampToValueAtTime(52, t + T_IMPACT + 3);
-        o.connect(ef); o.start(t);
-      }
-      ef.connect(eg); this.out(eg, 1, 0.25, bed);
+      // 2. a soft airy swell that carries the logo in, then a gentle low hit as it lands
+      this.whoosh(t + T_LOGO - 0.2, 1.6, 400, 3600, 0.12, bed);
+      this.impact(t + T_HIT, 0.5);
 
-      // 3. tension riser: airy noise climbing in pitch and level all the way to the hit
-      const rn = this.noiseSrc(false), rf = ctx.createBiquadFilter(), rg = ctx.createGain();
-      rf.type = "bandpass"; rf.Q.value = 2.2;
-      rf.frequency.setValueAtTime(300, t + 0.4); rf.frequency.exponentialRampToValueAtTime(5200, t + T_IMPACT - 0.05);
-      rg.gain.setValueAtTime(0.0001, t + 0.4); rg.gain.exponentialRampToValueAtTime(0.16, t + T_IMPACT - 0.08);
-      rg.gain.linearRampToValueAtTime(0.0001, t + T_IMPACT);
-      rn.connect(rf); rf.connect(rg); this.out(rg, 1, 0.4, bed); rn.start(t + 0.4); rn.stop(t + T_IMPACT + 0.1);
-
-      // 4. transition whooshes
-      this.whoosh(t + HOLD - 0.3, 2.4, 220, 3800, 0.2, bed);    // into the jump
-      this.whoosh(t + T_CS - 0.1, 1.6, 3000, 400, 0.07, bed);   // COMING SOON settles in
-
-      // 5. bass impact as the title locks (bypasses the drop-out so it lands at full weight)
-      this.impact(t + T_IMPACT);
-
-      // 6. soft shimmer as COMING SOON appears
+      // 3. whoosh and shimmer as COMING SOON appears
+      this.whoosh(t + T_CS - 0.1, 1.6, 3000, 400, 0.07, bed);
       this.shimmer(t + T_CS + 0.2);
     }
     whoosh(t, dur, f0, f1, vol, bus) {
@@ -311,15 +227,15 @@
       g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + dur * 0.65); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
       n.connect(bp); bp.connect(g); this.out(g, 1, 0.5, bus); n.start(t); n.stop(t + dur + 0.1);
     }
-    impact(t) {
+    impact(t, vol = 0.95) {
       const ctx = this.ctx;
       const o = this.osc("sine", 95), g = ctx.createGain();
       o.frequency.setValueAtTime(95, t); o.frequency.exponentialRampToValueAtTime(28, t + 1.1);
-      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.95, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 2.6);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 2.6);
       o.connect(g); this.out(g, 1, 0.35); o.start(t); o.stop(t + 2.8);
       const n = this.noiseSrc(false), lp = ctx.createBiquadFilter(), ng = ctx.createGain();
       lp.type = "lowpass"; lp.frequency.setValueAtTime(1800, t); lp.frequency.exponentialRampToValueAtTime(120, t + 0.6);
-      ng.gain.setValueAtTime(0.5, t); ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.8);
+      ng.gain.setValueAtTime(0.5 * (vol / 0.95), t); ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.8);
       n.connect(lp); lp.connect(ng); this.out(ng, 1, 0.6); n.start(t); n.stop(t + 1);
     }
     shimmer(t) {
@@ -340,100 +256,56 @@
   }
 
   /* ------------------------------------------------------------------ */
-  const space = new Space($("stars"), 1500, 40, 0.15);
-  const flight = new Space($("heroStars"), 4500, 60, 0.45); // the starfield you fly through at the start
-  const fx = new FX($("fx"));
+  const sky = new LiveSky(els.sky, 520);
   const sound = new Sound();
 
   let t0 = performance.now(), last = t0;
+  let tpx = 0, tpy = 0, px = 0, py = 0;          // pointer parallax (target and smoothed)
   function restart() { t0 = performance.now(); last = t0; scrambledCS = false; scrambleId++; showFinalCS(); }
+
+  addEventListener("pointermove", (e) => { tpx = (e.clientX / innerWidth - 0.5) * 2; tpy = (e.clientY / innerHeight - 0.5) * 2; });
+  addEventListener("pointerleave", () => { tpx = 0; tpy = 0; });
 
   /* Render ------------------------------------------------------------ */
   function render(now) {
-    const realDt = Math.max(0.001, (now - last) / 1000); last = now;
-    const dt = Math.min(0.05, realDt);
+    const dt = Math.min(0.05, Math.max(0.001, (now - last) / 1000)); last = now;
     const secs = reduceMotion ? 99 : (now - t0) / 1000;
-    const p = seg(secs, HOLD, HOLD + DUR);
     const fin = finalLogo();
 
-    /* 1. the tunnel shrinks into the TITANIUM letters (0.02 → 0.48), landing on the title lock */
-    const mp = easeFlight(seg(p, 0.02, 0.48));
-    const startW = (Math.hypot(vw, vh) * 0.62) / ANCHOR_R; // big enough that one solid stem covers the screen
-    const w = Math.exp(lerp(Math.log(startW), Math.log(fin.w), mp));
-    const ax = lerp(vw / 2, fin.left + ANCHOR.x * fin.w, mp);
-    const ay = lerp(vh / 2, fin.top + ANCHOR.y * fin.h, mp);
-    const mx = ax - ANCHOR.x * w, my = ay - ANCHOR.y * w * LOGO_AR;
-    const masked = w * ANCHOR_R < Math.hypot(vw, vh) * 0.55; // before this, one solid stem covers everything
-    els.hero.classList.toggle("unmasked", !masked);
-    if (masked) {
-      const size = `${w.toFixed(1)}px auto`, pos = `${mx.toFixed(1)}px ${my.toFixed(1)}px`;
-      els.hero.style.webkitMaskSize = size; els.hero.style.maskSize = size;
-      els.hero.style.webkitMaskPosition = pos; els.hero.style.maskPosition = pos;
-      els.heroLogo.style.backgroundSize = size; els.heroLogo.style.backgroundPosition = pos;
-    }
-    const fp = easeOut(seg(p, 0.36, 0.54)); // silver-fill progress
-    const settle = 1 - fp;
+    /* live background: slow drift handled in CSS, plus a little pointer parallax */
+    const k = 1 - Math.exp(-dt * 3);
+    px += (tpx - px) * k; py += (tpy - py) * k;
+    const bgIn = easeOut(seg(secs, 0, T_BG));
+    els.bg.style.opacity = bgIn.toFixed(3);
+    sky.px = px; sky.py = py;
+    els.sky.style.opacity = bgIn.toFixed(3);
+    sky.frame(dt, secs, reduceMotion);
 
-    /* first-person flight: cruise through the stars, then accelerate into the letters */
-    const thrust = easeInOut(clamp(secs / T_IMPACT));            // 0 → 1 as you reach the logo
-    const roll = 0.6 * Math.sin(secs * 0.8) * settle;           // slow zero-g drift
-    els.cam.style.transform = reduceMotion ? "none" : `rotate(${roll.toFixed(3)}deg)`;
-    if (fp < 1) { // hidden under the silver fill once the title has locked
-      flight.speed = reduceMotion ? 0.03 : lerp(0.35, 3.4, easeIn(thrust));
-      flight.frame(dt);
-    }
-    els.vel.textContent = (0.99 * thrust * settle + 0.12 * (1 - settle)).toFixed(2);
+    /* the logo eases in: fades up out of a soft blur, settling to full size */
+    const lp = easeOut(seg(secs, T_LOGO, T_LOGO_FULL));
+    const kick = secs >= T_HIT ? Math.exp(-(secs - T_HIT) / 0.5) : 0;
+    els.logo.style.left = `${fin.left.toFixed(1)}px`; els.logo.style.top = `${fin.top.toFixed(1)}px`;
+    els.logo.style.width = `${fin.w.toFixed(1)}px`; els.logo.style.height = `${fin.h.toFixed(1)}px`;
+    els.logo.style.opacity = lp.toFixed(3);
+    els.logo.style.transform = `scale(${(1.05 - 0.05 * lp).toFixed(4)})`;
+    els.logo.style.filter = `blur(${((1 - lp) * 6).toFixed(1)}px) brightness(1.14) contrast(1.1) drop-shadow(0 6px 8px rgba(0,0,0,${(0.55 * lp).toFixed(2)})) drop-shadow(0 0 ${(14 * lp + 16 * kick).toFixed(1)}px rgba(106,216,255,${(0.36 * lp + 0.3 * kick).toFixed(2)}))`;
 
-    /* 2. title locks in: polished titanium, depth shadow, a short glow kick and lens flare */
-    const kick = secs >= T_IMPACT ? Math.exp(-(secs - T_IMPACT) / 0.45) : 0;
-    els.heroLogo.style.opacity = fp.toFixed(3);
-    els.heroFill.style.opacity = (0.5 * fp).toFixed(3);
-    els.heroGlow.style.filter = fp > 0.01
-      ? `drop-shadow(0 6px 8px rgba(0,0,0,${(0.55 * fp).toFixed(2)})) drop-shadow(0 0 ${(14 * fp + 20 * kick).toFixed(1)}px rgba(106,216,255,${(0.36 * fp + 0.35 * kick).toFixed(2)}))`
-      : "none";
-    const logoCy = fin.top + fin.h / 2;
-    els.flare.style.top = `${logoCy.toFixed(1)}px`;
-    els.flare.style.opacity = (kick * 0.6).toFixed(3);
-    els.flare.style.transform = `translate(-50%, -50%) scaleX(${(0.25 + 0.75 * easeOut(seg(secs, T_IMPACT, T_IMPACT + 0.4))).toFixed(3)})`;
-
-    /* HUD fades as the transition begins */
-    els.hud.style.opacity = (1 - seg(p, 0, 0.12)).toFixed(3);
-
-    /* COMING SOON sits directly below the logo */
+    /* COMING SOON sits directly below the logo, fades in and decrypts in place */
     els.cs.style.top = `${(fin.top + fin.h + Math.max(28, fin.w * 0.1)).toFixed(1)}px`;
-
-    /* 3. the galaxy fades up behind the title, with a slow camera push-in for scale */
-    const ep = easeOut(seg(p, 0.36, 0.9));
-    const galaxyPush = 1.08 - 0.08 * ep + 0.05 * easeInOut(seg(secs, at(0.45), at(0.45) + 24));
-    els.galaxy.style.opacity = (0.78 * ep).toFixed(3); // held back so the text stays readable
-    els.galaxy.style.transform = `scale(${galaxyPush.toFixed(4)})`;
-
-    /* 4. COMING SOON: neon outline fades in, flares once as it lands, then a slow breath */
-    const cp = seg(p, 0.56, 0.9), ce = easeOut(cp);
+    const cp = seg(secs, T_CS, T_CS + 0.9), ce = easeOut(cp);
     els.cs.style.opacity = clamp(cp * 2.2);
     const since = secs - T_CS_FULL;
     const glow = (since > 0 ? Math.exp(-since / 0.9) : 0) + 0.18 * (0.5 + 0.5 * Math.sin(secs * 0.9)) * ce;
-    els.cs.style.filter = `drop-shadow(0 0 ${(3 + 6 * glow).toFixed(1)}px rgba(200,225,255,${(0.35 + 0.3 * glow).toFixed(2)})) drop-shadow(0 0 ${(14 + 14 * glow).toFixed(1)}px rgba(70,110,255,${(0.35 + 0.3 * glow).toFixed(2)}))`;
-    /* decrypt COMING SOON in place as it appears */
+    els.cs.style.filter = `drop-shadow(0 0 ${(3 + 6 * glow).toFixed(1)}px rgba(200,225,255,${(0.35 + 0.3 * glow).toFixed(2)})) drop-shadow(0 0 ${(14 + 14 * glow).toFixed(1)}px rgba(40,150,230,${(0.35 + 0.3 * glow).toFixed(2)}))`;
     if (!reduceMotion && !scrambledCS && secs >= T_CS) { scrambledCS = true; scrambleCS(1400); }
-    const lp = easeOut(seg(p, 0.68, 0.98));
-    els.energy.style.transform = `scaleX(${lp.toFixed(3)})`;
-    els.energy.style.opacity = (lp * 0.6).toFixed(3);
-
-    /* stars: streak during the jump, then decelerate out of warp */
-    space.speed = secs < T_IMPACT ? lerp(0.03, 2.6, easeIn(mp)) : 0.03 + 2.6 * Math.exp(-(secs - T_IMPACT) * 1.6);
-    space.frame(dt);
-
-    fx.frame(dt, {
-      secs,
-      streakA: reduceMotion ? 0 : lerp(0.2, 0.85, thrust) * settle,
-      streakV: lerp(0.25, 1.9, easeIn(thrust) * 0.6 + thrust * 0.4),
-    });
+    const ep = easeOut(seg(secs, T_CS + 0.6, T_CS + 2.2));
+    els.energy.style.transform = `scaleX(${ep.toFixed(3)})`;
+    els.energy.style.opacity = (ep * 0.6).toFixed(3);
 
     requestAnimationFrame(render);
   }
 
-  /* Sound toggle: first click turns sound on and replays the intro in sync */
+  /* Sound toggle: first click turns sound on and replays the entrance in sync */
   els.snd.addEventListener("click", () => {
     if (!sound.init()) return;
     if (!sound.on) {
@@ -454,7 +326,14 @@
   // belt and braces for browsers without overflow: clip — never let the stage scroll
   els.stage.addEventListener("scroll", () => { els.stage.scrollTop = 0; els.stage.scrollLeft = 0; });
 
-  addEventListener("resize", () => { vw = innerWidth; vh = innerHeight; space.resize(); flight.resize(); fx.resize(); });
+  addEventListener("resize", () => { vw = innerWidth; vh = innerHeight; sky.resize(); });
+
+  // make sure the backdrop video is playing (some phones hold back autoplay until the first touch)
+  const playBg = () => { if (els.bgVideo && els.bgVideo.paused && !reduceMotion) els.bgVideo.play().catch(() => {}); };
+  playBg();
+  ["pointerdown", "touchstart", "keydown"].forEach((ev) => addEventListener(ev, playBg, { passive: true }));
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) playBg(); });
+  if (reduceMotion && els.bgVideo) { els.bgVideo.removeAttribute("autoplay"); els.bgVideo.pause(); }
 
   restart();
   requestAnimationFrame(render);

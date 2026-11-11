@@ -4,8 +4,8 @@
   --ink: #eef4ff;
   --dim: rgba(200, 220, 255, 0.6);
   --cyan: 106, 216, 255;
-  --blue: 77, 107, 255;
-  --violet: 154, 70, 255;
+  --blue: 40, 130, 210;
+  --violet: 40, 170, 190;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -33,9 +33,9 @@ body {
   position: absolute; inset: -15%;
   pointer-events: none;
   background:
-    radial-gradient(35% 30% at 22% 30%, rgba(var(--violet), 0.22), transparent 70%),
-    radial-gradient(30% 26% at 78% 22%, rgba(var(--blue), 0.2), transparent 70%),
-    radial-gradient(45% 30% at 60% 62%, rgba(60, 40, 160, 0.16), transparent 70%),
+    radial-gradient(35% 30% at 22% 30%, rgba(30, 150, 170, 0.18), transparent 70%),
+    radial-gradient(30% 26% at 78% 22%, rgba(20, 100, 170, 0.18), transparent 70%),
+    radial-gradient(45% 30% at 60% 62%, rgba(150, 80, 40, 0.10), transparent 70%),
     radial-gradient(25% 22% at 35% 70%, rgba(var(--cyan), 0.07), transparent 70%);
   filter: blur(30px);
   animation: drift 70s ease-in-out infinite alternate;
@@ -44,19 +44,49 @@ body {
   from { transform: translate3d(-2%, -1%, 0) scale(1); }
   to   { transform: translate3d(2%, 1.5%, 0) scale(1.06); }
 }
-.stars, .fx { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.sky { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; opacity: 0; }
 
-/* ---------- Galaxy ---------- */
-.galaxy {
+/* ---------- Backdrop video ---------- */
+.bg {
+  position: absolute; inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.backdrop {
   position: absolute; inset: 0;
   width: 100%; height: 100%;
   object-fit: cover;
-  object-position: 50% 42%;
-  transform-origin: 50% 42%;
+  object-position: 62% 50%;
+  display: block;
+  background: #02050d;
+}
+/* soft shade behind the title so the white lettering always reads */
+.bg::after {
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(58% 44% at 50% 52%, rgba(2, 6, 18, 0.5) 0%, rgba(2, 6, 18, 0.22) 55%, transparent 100%);
+}
+
+/* ---------- Logo ---------- */
+.logo {
+  position: absolute; left: 0; top: 0;
   opacity: 0;
   pointer-events: none;
-  mix-blend-mode: screen;          /* its black sky melts into the starfield */
-  will-change: transform, opacity;
+  will-change: transform, opacity, filter;
+}
+.logo img { display: block; width: 100%; height: 100%; }
+/* a soft highlight that sweeps across the polished metal */
+.logo-shine {
+  position: absolute; inset: 0;
+  -webkit-mask: url("assets/logo-titanium.png?v=6") center / 100% 100% no-repeat;
+          mask: url("assets/logo-titanium.png?v=6") center / 100% 100% no-repeat;
+  mix-blend-mode: soft-light;
+  opacity: 0.55;
+  background: linear-gradient(105deg, transparent 38%, rgba(255,255,255,0.9) 48%, transparent 58%) 0 0 / 250% 100% no-repeat;
+  animation: shine 5s ease-in-out infinite;
+}
+@keyframes shine {
+  0%, 40% { background-position: 130% 0; }
+  80%, 100% { background-position: -40% 0; }
 }
 
 /* ---------- Coming soon ---------- */
@@ -97,7 +127,7 @@ body {
   width: 0.13em; height: 0.13em; min-width: 4px; min-height: 4px;
   border-radius: 50%;
   background: #f4fbff;
-  box-shadow: 0 0 6px rgba(106, 216, 255, 0.9), 0 0 14px rgba(77, 107, 255, 0.7);
+  box-shadow: 0 0 6px rgba(106, 216, 255, 0.9), 0 0 14px rgba(40, 150, 230, 0.7);
   animation: dot 1.8s ease-in-out infinite;
 }
 .dots i:nth-child(2) { animation-delay: 0.3s; }
@@ -117,94 +147,6 @@ body {
   transform: scaleX(0);
   opacity: 0;
 }
-/* ---------- Hero (tunnel through the logo) ---------- */
-.hero-glow { position: absolute; inset: 0; pointer-events: none; }
-.hero {
-  position: absolute; inset: 0;
-  overflow: hidden;
-  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
-  -webkit-mask-image: url("assets/logo-titanium.png?v=6"); mask-image: url("assets/logo-titanium.png?v=6");
-}
-.hero.unmasked { -webkit-mask-image: none; mask-image: none; }
-.cam {
-  position: absolute; inset: -4%;           /* slack so the roll never shows an edge */
-  transform-origin: 50% 44%;
-  will-change: transform;
-}
-/* the starfield you fly through: deep space with a faint nebula tint */
-.hero-stars {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  display: block;
-  background:
-    radial-gradient(40% 35% at 30% 35%, rgba(var(--violet), 0.16), transparent 70%),
-    radial-gradient(35% 30% at 72% 60%, rgba(var(--blue), 0.14), transparent 70%),
-    radial-gradient(60% 60% at 50% 46%, #2a3278 0%, #141a4a 55%, #080b26 100%);
-}
-/* the finished logo: the real silver artwork, fading in over the cutout */
-.hero-logo {
-  position: absolute; inset: 0;
-  opacity: 0;
-  background: url("assets/logo-titanium.png?v=6") 0 0 / 0 0 no-repeat;
-  filter: brightness(1.14) contrast(1.1);   /* lifts the grey artwork towards polished silver */
-}
-/* a soft highlight that sweeps across the polished metal */
-.hero-fill {
-  position: absolute; inset: 0;
-  opacity: 0;
-  mix-blend-mode: soft-light;
-  background: linear-gradient(105deg, transparent 38%, rgba(255,255,255,0.9) 48%, transparent 58%) 0 0 / 250% 100% no-repeat;
-  animation: shine 5s ease-in-out infinite;
-}
-@keyframes shine {
-  0%, 40% { background-position: 130% 0; }
-  80%, 100% { background-position: -40% 0; }
-}
-
-/* ---------- Lens flare ---------- */
-.flare {
-  position: absolute; left: 50%; top: 0;
-  width: 120vw; height: 120px;
-  transform: translate(-50%, -50%) scaleX(0.2);
-  pointer-events: none;
-  opacity: 0;
-  mix-blend-mode: screen;
-  background:
-    radial-gradient(closest-side, rgba(255,255,255,0.95), rgba(170,215,255,0.5) 30%, transparent 70%) center / 160px 140px no-repeat,
-    linear-gradient(90deg, transparent 0%, rgba(var(--violet), 0.35) 22%, rgba(var(--cyan), 0.8) 44%, #fff 50%, rgba(var(--cyan), 0.8) 56%, rgba(var(--violet), 0.35) 78%, transparent 100%) center / 100% 3px no-repeat;
-  filter: blur(0.6px);
-}
-
-/* ---------- HUD ---------- */
-.hud { position: absolute; inset: 0; pointer-events: none; font-size: 11px; letter-spacing: 0.28em; color: var(--dim); }
-.hud-tl { position: absolute; top: 30px; left: 34px; color: var(--ink); }
-.hud-tr { position: absolute; top: 30px; right: 34px; }
-.hud-bl { position: absolute; bottom: 30px; left: 34px; font-size: 10px; letter-spacing: 0.22em; }
-.hud-br { position: absolute; bottom: 30px; right: 34px; font-size: 10px; letter-spacing: 0.22em; color: rgb(var(--cyan)); font-variant-numeric: tabular-nums; }
-/* helmet visor: curved glass reflection + slight edge falloff */
-.visor {
-  position: absolute; inset: 0;
-  background:
-    radial-gradient(120% 95% at 50% 46%, transparent 62%, rgba(2, 6, 16, 0.45) 100%),
-    radial-gradient(70% 38% at 30% 8%, rgba(255, 255, 255, 0.07), transparent 70%),
-    linear-gradient(115deg, transparent 18%, rgba(255, 255, 255, 0.05) 26%, transparent 34%);
-}
-.hud-frame {
-  position: absolute; inset: 16px;
-  border: 1px solid rgba(var(--cyan), 0.55);
-  border-radius: 14px;
-  -webkit-mask:
-    linear-gradient(#000 0 0) top left / 70px 70px no-repeat,
-    linear-gradient(#000 0 0) top right / 70px 70px no-repeat,
-    linear-gradient(#000 0 0) bottom left / 70px 70px no-repeat,
-    linear-gradient(#000 0 0) bottom right / 70px 70px no-repeat;
-          mask:
-    linear-gradient(#000 0 0) top left / 70px 70px no-repeat,
-    linear-gradient(#000 0 0) top right / 70px 70px no-repeat,
-    linear-gradient(#000 0 0) bottom left / 70px 70px no-repeat,
-    linear-gradient(#000 0 0) bottom right / 70px 70px no-repeat;
-}
-
 /* ---------- Finishing grade ---------- */
 .grade {
   position: absolute; inset: 0; pointer-events: none; z-index: 4;
@@ -236,9 +178,5 @@ body {
 .snd[aria-pressed="true"] .snd-off { display: none; }
 
 @media (max-width: 640px) {
-  .hud-tr { display: none; }
-  .hud-tl { left: 28px; top: 28px; }
-  .hud-bl { left: 28px; bottom: 28px; }
-  .hud-br { right: 28px; bottom: 28px; }
   .snd { right: 18px; bottom: 58px; }
 }
