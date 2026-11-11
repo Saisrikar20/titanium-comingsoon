@@ -110,7 +110,7 @@ body {
 .ar-screen {
   position: relative;
   width: min(92vw, 1140px);
-  height: min(72vh, 640px);
+  height: min(78vh, 670px);
   clip-path: url(#visorCurvedClip);
   -webkit-clip-path: url(#visorCurvedClip);
   background: radial-gradient(ellipse 110% 90% at 50% 45%, rgba(8, 18, 34, 0.76) 0%, rgba(4, 10, 22, 0.86) 70%, rgba(2, 5, 12, 0.94) 100%);
@@ -348,10 +348,26 @@ body {
   text-align: center;
   width: 100%;
   max-width: 420px;
-  margin-top: 36px;
+  margin-top: 10px;
   padding: 0 20px;
   opacity: 0;
   will-change: transform, opacity;
+}
+.ar-brand-wrap {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 2px;
+}
+.ar-brand-logo {
+  width: clamp(185px, 20vw, 240px);
+  max-width: 88%;
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 0 18px rgba(0, 229, 255, 0.65)) drop-shadow(0 0 42px rgba(0, 229, 255, 0.28)) drop-shadow(0 4px 12px rgba(0, 0, 0, 0.85));
+  user-select: none;
+  pointer-events: none;
 }
 .ar-brand {
   font-size: clamp(20px, 2.8vw, 30px);
@@ -375,7 +391,7 @@ body {
   letter-spacing: 0.3em;
   color: rgba(0, 229, 255, 0.9);
   text-transform: uppercase;
-  margin-bottom: 8px;
+  margin-bottom: 5px;
   text-shadow: 0 0 10px rgba(0, 229, 255, 0.6);
 }
 .ar-welcome {
@@ -383,7 +399,7 @@ body {
   font-weight: 400;
   letter-spacing: 0.08em;
   color: #eef4ff;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 /* Form Card */
@@ -393,7 +409,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   pointer-events: auto;
 }
 .ar-btn-google {
