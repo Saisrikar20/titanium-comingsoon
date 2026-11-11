@@ -59,6 +59,9 @@ titanium-27/
     ├── logo-titanium.png   TITANIUM 2027 logo with transparent background (the cutout shape and the final silver artwork)
     ├── galaxy.mp4          Turning spiral galaxy behind the title (1080p H.264, 24 s seamless loop, muted)
     ├── galaxy-poster.jpg   First frame of the galaxy, shown until the video can play
+    ├── nebula.webp         Alternative blue and violet nebula background (not used right now)
+    ├── logo-titanium-2026.png  Logo as supplied, with 2026 (not used right now)
+    ├── logo-titanium-2027.png  Earlier logo with its own 2027 (not used right now)
     ├── earth-surface.webp  Earlier Earth background, base layer (not used right now)
     ├── earth-clouds.webp   Earlier Earth background, cloud layer (not used right now)
     └── earth-disc.webp     Original Earth photo (not used right now)

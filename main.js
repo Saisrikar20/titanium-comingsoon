@@ -75,9 +75,9 @@
   const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   /* Logo mask geometry ------------------------------------------------ */
-  const LOGO_AR = 624 / 1600;            // height / width of logo-titanium.png
-  const ANCHOR = { x: 0.545, y: 0.457 }; // solid point inside the letters — the zoom pivots here
-  const ANCHOR_R = 0.033;                  // radius of solid area around it, as a fraction of logo width
+  const LOGO_AR = 520 / 1280;            // height / width of logo-titanium.png
+  const ANCHOR = { x: 0.541, y: 0.475 }; // solid point inside the letters — the zoom pivots here
+  const ANCHOR_R = 0.029;                  // radius of solid area around it, as a fraction of logo width
 
   let vw = innerWidth, vh = innerHeight;
   const mobile = () => vw <= 640;
