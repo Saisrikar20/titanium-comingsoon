@@ -16,6 +16,7 @@
     stage: $("stage"),
     flare: $("flare"),
     hud: $("hud"), vel: $("vel"),
+    hudTr: document.querySelector(".hud-tr"),
     galaxy: $("galaxy"), snd: $("snd"),
     arCockpit: $("arCockpit"), arScreen: $("arScreen"), arContent: $("arContent"), cockpitDash: $("cockpitDash"),
     arExpBeam: $("arExpBeam"),
@@ -23,22 +24,27 @@
 
   /* ------------------------------------------------------------------
    * Timeline (seconds).
-   * 0.0s – 2.0s : Spaceman waves palm left and right in center
-   * 2.0s – 4.4s : Turns 180°, hands return to normal, model pulled down so helmet is centered (not backpack)
-   * 4.4s – 4.8s : Camera glides right INTO the head/helmet of the model, model dissolves into 1st person
-   * 4.8s – 5.5s : HUD VIEW ACTIVE: "WARP DRIVE · ENGAGED", velocity ramps 0.00c -> 0.99c
-   * 5.5s – 7.1s : WARP ANIMATION: Hyperspace streaks burst, star acceleration, flare
-   * 7.1s – 7.8s : Warp velocity settles into cockpit orbit view
-   * 7.8s+       : GAME AR CYLINDRICAL CURVED SCREEN OPENS & LOCKS IN!
+   * 0.0s – 2.0s  : Meet the spaceman in deep space, he greets us (palm wave left/right)
+   * 2.0s – 4.4s  : Focus shifts, we zoom in to his helmet (model pulled down so helmet is centered)
+   * 4.4s – 4.8s  : Camera glides right into his head/helmet; we become the spaceman!
+   * 4.8s – 5.5s  : Inside helmet: WE GET THE HUD ("WARP DRIVE · ENGAGED", velocity ramps 0.00c -> 0.99c)
+   * 5.5s – 7.2s  : WARP: Hyperspace streaks burst, star acceleration, flare, hyperspeed travel
+   * 7.2s – 10.2s : SEE THE NEW PLACE FOR A FEW SECONDS (3 full seconds):
+   *                - Drop out of warp into orbit of glowing rotating galaxy
+   *                - Cockpit flight deck console active with cyan flight grips
+   *                - Calm orbital cruising speed (0.12 c), peaceful deep space view
+   * 10.2s+       : THE POP-UP OPENS:
+   *                - Game opening holographic slit expands from center
+   *                - Curved AR screen unfolds and locks in with TITANIUM 2027 portal!
    * ------------------------------------------------------------------ */
   const HOLD = 2.0;                       // Greeting hold, then begins 180° turn & helmet zoom
-  const T_ZOOM_HELMET = 4.4;              // Reaches back of helmet (model pulled down to center helmet dome)
-  const T_ENTER_HEAD = 4.8;               // Enters through helmet into 1st-person POV, model dissolves
-  const T_HUD_APPEAR = 4.8;               // Once inside head: HUD view activates with WARP DRIVE ENGAGED
-  const T_WARP_FIRE = 5.5;                // Warp drive fires: hyperspace streaks, star acceleration, lens flare
-  const T_WARP_DECEL = 7.1;               // Warp velocity settles to orbital cruising speed
-  const T_HUD_FADE = 7.3;                 // Visor HUD dissolves into cockpit viewport
-  const T_AR_REVEAL = 7.8;                // Game opening curved AR screen expands from center & displays info!
+  const T_ZOOM_HELMET = 4.4;              // Reaches back of helmet
+  const T_ENTER_HEAD = 4.8;               // Enters helmet; we become the spaceman!
+  const T_HUD_APPEAR = 4.8;               // We get the HUD!
+  const T_WARP_FIRE = 5.5;                // Warp drive engages
+  const T_WARP_DECEL = 7.2;               // Warp drops out; arrive at the new place!
+  const T_HUD_FADE = 9.8;                 // Visor HUD fades as the pop-up prepares to open
+  const T_AR_REVEAL = 10.2;               // 3s of seeing new place -> the pop-up opens!
   const T_ENTER_VISOR = T_WARP_DECEL;
   const T_IMPACT = T_AR_REVEAL;
   const DUR = 5.0;
@@ -359,7 +365,7 @@
     const roll = 0.5 * Math.sin(secs * 0.7) * (1 - settled);
     if (els.cam) els.cam.style.transform = reduceMotion ? "none" : `rotate(${roll.toFixed(3)}deg)`;
 
-    // Warp velocity readout
+    // Warp velocity readout & status
     if (els.vel) {
       if (secs < T_HUD_APPEAR) {
         els.vel.textContent = "0.00";
@@ -369,8 +375,16 @@
       } else if (secs < T_WARP_DECEL) {
         els.vel.textContent = "0.99";
       } else {
-        const dockP = seg(secs, T_WARP_DECEL, T_AR_REVEAL);
+        const dockP = seg(secs, T_WARP_DECEL, T_WARP_DECEL + 0.8);
         els.vel.textContent = lerp(0.99, 0.12, easeOut(dockP)).toFixed(2);
+      }
+    }
+
+    if (els.hudTr) {
+      if (secs < T_WARP_DECEL) {
+        els.hudTr.textContent = "WARP DRIVE · ENGAGED";
+      } else {
+        els.hudTr.textContent = "SYSTEM 2027 // ACTIVE ORBIT";
       }
     }
 
@@ -381,11 +395,11 @@
       space.speed = lerp(0.03, 0.45, seg(secs, T_HUD_APPEAR, T_WARP_FIRE));
     } else if (inWarp) {
       space.speed = lerp(0.45, 3.4, thrust);
-    } else if (secs >= T_WARP_DECEL && secs < T_AR_REVEAL) {
-      const decel = 1 - seg(secs, T_WARP_DECEL, T_AR_REVEAL);
-      space.speed = 0.03 + 3.0 * decel * decel;
-    } else if (secs >= T_AR_REVEAL) {
-      space.speed = 0.03 + 1.2 * Math.exp(-(secs - T_AR_REVEAL) * 1.8);
+    } else if (secs >= T_WARP_DECEL && secs < T_WARP_DECEL + 0.9) {
+      const decel = 1 - seg(secs, T_WARP_DECEL, T_WARP_DECEL + 0.9);
+      space.speed = 0.035 + 2.4 * decel * decel;
+    } else {
+      space.speed = 0.035; // Calm orbital cruising speed while viewing new place
     }
     space.frame(dt);
 
@@ -396,26 +410,26 @@
       streakV: lerp(0.25, 2.8, thrust),
     });
 
-    // 3. HUD visor: emerges after 45° dive, shows WARP DRIVE · ENGAGED, fades out at orbit arrival
+    // 3. HUD visor: emerges inside head (4.8s), shows WARP DRIVE · ENGAGED, fades out before pop-up (9.8s)
     if (els.hud) {
       if (secs < T_HUD_APPEAR) {
         els.hud.style.opacity = "0";
-      } else if (secs < T_HUD_APPEAR + 0.35) {
-        const hudIn = easeOut(seg(secs, T_HUD_APPEAR, T_HUD_APPEAR + 0.35));
+      } else if (secs < T_HUD_APPEAR + 0.3) {
+        const hudIn = easeOut(seg(secs, T_HUD_APPEAR, T_HUD_APPEAR + 0.3));
         els.hud.style.opacity = hudIn.toFixed(3);
       } else if (secs < T_HUD_FADE) {
         els.hud.style.opacity = "1";
       } else {
-        const hudOut = 1 - easeOut(seg(secs, T_HUD_FADE, T_HUD_FADE + 0.45));
+        const hudOut = 1 - easeOut(seg(secs, T_HUD_FADE, T_HUD_FADE + 0.35));
         els.hud.style.opacity = hudOut.toFixed(3);
       }
     }
 
-    // 4. Galaxy background fade & push-in behind the AR screen
+    // 4. Galaxy background: fades in during warp, expands into view upon arrival at new place
     if (els.galaxy) {
-      const gp = easeOut(seg(secs, T_WARP_FIRE + 0.4, T_WARP_DECEL + 0.8));
-      const galaxyPush = 1.05 - 0.05 * gp + 0.04 * easeInOut(seg(secs, T_AR_REVEAL, T_AR_REVEAL + 24));
-      els.galaxy.style.opacity = (0.78 * gp).toFixed(3);
+      const gp = easeOut(seg(secs, T_WARP_FIRE + 0.2, T_WARP_DECEL + 0.5));
+      const galaxyPush = 1.05 - 0.05 * gp + 0.04 * easeInOut(seg(secs, T_WARP_DECEL, T_AR_REVEAL + 20));
+      els.galaxy.style.opacity = (0.85 * gp).toFixed(3);
       els.galaxy.style.transform = `scale(${galaxyPush.toFixed(4)})`;
     }
 
@@ -429,75 +443,15 @@
       els.flare.style.transform = `translate(-50%, -50%) scaleX(${(0.3 + 0.7 * (kick > 0.05 ? 1 : 0)).toFixed(3)})`;
     }
 
-    // 6. GAME OPENING EXPANSION FROM CENTER FOR CYLINDRICAL AR SCREEN
-    if (els.arCockpit && els.arScreen) {
-      if (secs >= T_AR_REVEAL) {
+    // 6. COCKPIT ARRIVAL (7.2s) & POP-UP AR SCREEN REVEAL (10.2s)
+    if (els.arCockpit) {
+      if (secs >= T_WARP_DECEL) {
         els.arCockpit.style.opacity = "1";
         els.arCockpit.style.pointerEvents = "auto";
 
-        const expandDur = 0.72;
-        const expandP = seg(secs, T_AR_REVEAL, T_AR_REVEAL + expandDur);
-
-        let scaleX = 1, scaleY = 1, glow = 0;
-        if (expandP < 0.45) {
-          // Phase 1: Horizontal slit expands from center line
-          const p1 = expandP / 0.45;
-          const e1 = easeOut(p1);
-          scaleX = lerp(0.02, 1.05, e1);
-          scaleY = lerp(0.015, 0.07, e1);
-          glow = 1.8 * (1 - p1 * 0.25);
-        } else {
-          // Phase 2: Vertical unfolding from center line with elastic game settle
-          const p2 = (expandP - 0.45) / 0.55;
-          const e2 = Math.sin(p2 * Math.PI * 0.5);
-          const overshoot = Math.sin(p2 * Math.PI) * 0.06;
-          scaleX = lerp(1.05, 1.0, p2);
-          scaleY = lerp(0.07, 1.0, e2) + overshoot;
-          glow = lerp(1.2, 0, p2);
-        }
-
-        // Center expansion energy beam dynamics
-        if (els.arExpBeam) {
-          if (expandP < 0.7) {
-            const beamAlpha = 1 - expandP / 0.7;
-            els.arExpBeam.style.opacity = beamAlpha.toFixed(3);
-            els.arExpBeam.style.transform = `translateY(-50%) scaleX(${(scaleX * 1.15).toFixed(3)}) scaleY(${(1 + glow * 3).toFixed(2)})`;
-          } else {
-            els.arExpBeam.style.opacity = "0";
-          }
-        }
-
-        // 3D holographic cylindrical visor perspective tilt with mouse responsiveness
-        const tiltX = lerp(6.0, 2.2, expandP) - mouse.y * 1.8;
-        const tiltY = mouse.x * 2.5;
-        const finalScale = 0.96;
-
-        els.arScreen.style.transform = `rotateX(${tiltX.toFixed(2)}deg) rotateY(${tiltY.toFixed(2)}deg) scaleX(${(scaleX * finalScale).toFixed(4)}) scaleY(${(scaleY * finalScale).toFixed(4)})`;
-        els.arScreen.style.filter = glow > 0.05 ? `drop-shadow(0 0 ${glow * 28}px rgba(0, 229, 255, ${glow * 0.85})) brightness(${1 + glow * 0.35})` : "none";
-
-        // DISPLAY INFO AFTER EXPANSION
-        const infoDelay = 0.52;
-        const infoP = seg(secs, T_AR_REVEAL + infoDelay, T_AR_REVEAL + infoDelay + 0.65);
-        const infoEase = easeOut(infoP);
-
-        if (els.arContent) {
-          els.arContent.style.opacity = infoEase.toFixed(3);
-          const contentTransY = (1 - infoEase) * 16;
-          const contentScale = lerp(0.93, 1.0, infoEase);
-          els.arContent.style.transform = `translateY(${contentTransY.toFixed(1)}px) scale(${contentScale.toFixed(3)})`;
-        }
-
-        // Surrounding HUD elements (tabs, status, docks) cascade in cleanly
-        const hudP = seg(secs, T_AR_REVEAL + 0.42, T_AR_REVEAL + 0.92);
-        const hudEase = easeOut(hudP);
-        const hudElements = els.arScreen.querySelectorAll(".ar-top-tabs, .ar-bracket-tl, .ar-status-tr, .ar-bracket-r, .ar-bottom-bar");
-        hudElements.forEach((el) => {
-          el.style.opacity = hudEase.toFixed(3);
-        });
-
-        // Zero-g floating breath for the cockpit deck
+        // Cockpit dashboard appears upon arrival at the new place
         if (els.cockpitDash) {
-          const dashP = seg(secs, T_AR_REVEAL + 0.25, T_AR_REVEAL + 0.85);
+          const dashP = seg(secs, T_WARP_DECEL, T_WARP_DECEL + 0.8);
           const dashEase = easeOut(dashP);
           const dashFloat = Math.sin(secs * 1.2) * 2.5;
           els.cockpitDash.style.opacity = dashEase.toFixed(3);
@@ -506,12 +460,84 @@
       } else {
         els.arCockpit.style.opacity = "0";
         els.arCockpit.style.pointerEvents = "none";
-        if (els.arExpBeam) els.arExpBeam.style.opacity = "0";
-        if (els.arContent) els.arContent.style.opacity = "0";
-        const hudElements = els.arScreen.querySelectorAll(".ar-top-tabs, .ar-bracket-tl, .ar-status-tr, .ar-bracket-r, .ar-bottom-bar");
-        hudElements.forEach((el) => {
-          el.style.opacity = "0";
-        });
+        if (els.cockpitDash) els.cockpitDash.style.opacity = "0";
+      }
+
+      // Pop-up AR screen opens after viewing the new place for a few seconds (10.2s)
+      if (els.arScreen) {
+        if (secs >= T_AR_REVEAL) {
+          els.arScreen.style.opacity = "1";
+          els.arScreen.style.pointerEvents = "auto";
+
+          const expandDur = 0.72;
+          const expandP = seg(secs, T_AR_REVEAL, T_AR_REVEAL + expandDur);
+
+          let scaleX = 1, scaleY = 1, glow = 0;
+          if (expandP < 0.45) {
+            // Phase 1: Horizontal slit expands from center line
+            const p1 = expandP / 0.45;
+            const e1 = easeOut(p1);
+            scaleX = lerp(0.02, 1.05, e1);
+            scaleY = lerp(0.015, 0.07, e1);
+            glow = 1.8 * (1 - p1 * 0.25);
+          } else {
+            // Phase 2: Vertical unfolding from center line with elastic game settle
+            const p2 = (expandP - 0.45) / 0.55;
+            const e2 = Math.sin(p2 * Math.PI * 0.5);
+            const overshoot = Math.sin(p2 * Math.PI) * 0.06;
+            scaleX = lerp(1.05, 1.0, p2);
+            scaleY = lerp(0.07, 1.0, e2) + overshoot;
+            glow = lerp(1.2, 0, p2);
+          }
+
+          // Center expansion energy beam dynamics
+          if (els.arExpBeam) {
+            if (expandP < 0.7) {
+              const beamAlpha = 1 - expandP / 0.7;
+              els.arExpBeam.style.opacity = beamAlpha.toFixed(3);
+              els.arExpBeam.style.transform = `translateY(-50%) scaleX(${(scaleX * 1.15).toFixed(3)}) scaleY(${(1 + glow * 3).toFixed(2)})`;
+            } else {
+              els.arExpBeam.style.opacity = "0";
+            }
+          }
+
+          // 3D holographic cylindrical visor perspective tilt with mouse responsiveness
+          const tiltX = lerp(6.0, 2.2, expandP) - mouse.y * 1.8;
+          const tiltY = mouse.x * 2.5;
+          const finalScale = 0.96;
+
+          els.arScreen.style.transform = `rotateX(${tiltX.toFixed(2)}deg) rotateY(${tiltY.toFixed(2)}deg) scaleX(${(scaleX * finalScale).toFixed(4)}) scaleY(${(scaleY * finalScale).toFixed(4)})`;
+          els.arScreen.style.filter = glow > 0.05 ? `drop-shadow(0 0 ${glow * 28}px rgba(0, 229, 255, ${glow * 0.85})) brightness(${1 + glow * 0.35})` : "none";
+
+          // DISPLAY INFO AFTER EXPANSION
+          const infoDelay = 0.52;
+          const infoP = seg(secs, T_AR_REVEAL + infoDelay, T_AR_REVEAL + infoDelay + 0.65);
+          const infoEase = easeOut(infoP);
+
+          if (els.arContent) {
+            els.arContent.style.opacity = infoEase.toFixed(3);
+            const contentTransY = (1 - infoEase) * 16;
+            const contentScale = lerp(0.93, 1.0, infoEase);
+            els.arContent.style.transform = `translateY(${contentTransY.toFixed(1)}px) scale(${contentScale.toFixed(3)})`;
+          }
+
+          // Surrounding HUD elements (tabs, status, docks) cascade in cleanly
+          const hudP = seg(secs, T_AR_REVEAL + 0.42, T_AR_REVEAL + 0.92);
+          const hudEase = easeOut(hudP);
+          const hudElements = els.arScreen.querySelectorAll(".ar-top-tabs, .ar-bracket-tl, .ar-status-tr, .ar-bracket-r, .ar-bottom-bar");
+          hudElements.forEach((el) => {
+            el.style.opacity = hudEase.toFixed(3);
+          });
+        } else {
+          els.arScreen.style.opacity = "0";
+          els.arScreen.style.pointerEvents = "none";
+          if (els.arExpBeam) els.arExpBeam.style.opacity = "0";
+          if (els.arContent) els.arContent.style.opacity = "0";
+          const hudElements = els.arScreen.querySelectorAll(".ar-top-tabs, .ar-bracket-tl, .ar-status-tr, .ar-bracket-r, .ar-bottom-bar");
+          hudElements.forEach((el) => {
+            el.style.opacity = "0";
+          });
+        }
       }
     }
 
