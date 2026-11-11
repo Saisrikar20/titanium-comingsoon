@@ -298,8 +298,8 @@
   }
 
   /* ------------------------------------------------------------------ */
-  const space = new Space($("stars"));
-  const flight = new Space($("heroStars"), 1800, 60, 0.35); // the starfield you fly through at the start
+  const space = new Space($("stars"), 1500, 40, 0.15);
+  const flight = new Space($("heroStars"), 4500, 60, 0.45); // the starfield you fly through at the start
   const fx = new FX($("fx"));
   const sound = new Sound();
 
