@@ -83,6 +83,10 @@ body {
   color: #ffffff;
   -webkit-text-stroke: 0.5px #ffffff;
 }
+/* each letter sits in a fixed-width cell, so the scramble never shifts anything */
+.cs-text { display: inline-block; white-space: nowrap; }
+.ch { display: inline-block; text-align: center; }
+.ch.scr { opacity: 0.6; }
 /* three dots after the words (out of the flow, so the words stay centred) */
 .dots {
   position: absolute; left: 100%; bottom: 0.3em;

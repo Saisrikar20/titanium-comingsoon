@@ -17,9 +17,51 @@
     hero: $("hero"), cam: $("cam"),
     heroFill: $("heroFill"), heroLogo: $("heroLogo"), heroGlow: $("heroGlow"), flare: $("flare"),
     hud: $("hud"), vel: $("vel"),
-    cs: $("cs"), csTitle: $("csTitle"), energy: $("energy"),
+    cs: $("cs"), csTitle: $("csTitle"), csText: $("csText"), energy: $("energy"),
     galaxy: $("galaxy"), snd: $("snd"),
   };
+
+  /* ------------------------------------------------------------------
+   * COMING SOON scramble: the letters decrypt from random symbols, left to right.
+   * Every letter lives in a fixed-width cell, so the text never moves or changes width.
+   * ------------------------------------------------------------------ */
+  const CS_TEXT = "Coming Soon";
+  const SCRAMBLE_CHARS = "0123456789ABCDEF/\\<>[]{}=+*#";
+  els.csText.textContent = "";
+  const csCells = [...CS_TEXT].map((ch) => {
+    const s = document.createElement("span");
+    s.className = "ch";
+    s.textContent = ch === " " ? "\u00a0" : ch;
+    els.csText.appendChild(s);
+    return s;
+  });
+  const csChar = (i) => (CS_TEXT[i] === " " ? "\u00a0" : CS_TEXT[i]);
+  function lockCellWidths() { // measure each final letter once, then fix its cell to that width
+    const fs = parseFloat(getComputedStyle(els.csTitle).fontSize) || 16;
+    csCells.forEach((c, i) => { c.style.width = ""; c.textContent = csChar(i); });
+    const ws = csCells.map((c) => c.getBoundingClientRect().width / fs);
+    csCells.forEach((c, i) => { c.style.width = `${ws[i].toFixed(4)}em`; });
+  }
+  (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(lockCellWidths);
+
+  let scrambledCS = false, scrambleId = 0;
+  function showFinalCS() { csCells.forEach((c, i) => { c.textContent = csChar(i); c.classList.remove("scr"); }); }
+  function scrambleCS(duration = 1400) {
+    const start = performance.now(); let lastRoll = 0;
+    const id = ++scrambleId;
+    function tick(now) {
+      if (id !== scrambleId) return;                     // a newer run (or a restart) took over
+      const prog = clamp((now - start) / duration);
+      const locked = Math.floor(prog * csCells.length);
+      const roll = now - lastRoll > 50; if (roll) lastRoll = now;
+      csCells.forEach((c, i) => {
+        if (CS_TEXT[i] === " " || i < locked) { c.textContent = csChar(i); c.classList.remove("scr"); }
+        else if (roll || !c.classList.contains("scr")) { c.textContent = SCRAMBLE_CHARS[(Math.random() * SCRAMBLE_CHARS.length) | 0]; c.classList.add("scr"); }
+      });
+      if (prog < 1) requestAnimationFrame(tick); else showFinalCS();
+    }
+    requestAnimationFrame(tick);
+  }
 
   /* ------------------------------------------------------------------
    * Timeline (seconds). The page holds, then plays the transition once.
@@ -304,7 +346,7 @@
   const sound = new Sound();
 
   let t0 = performance.now(), last = t0;
-  function restart() { t0 = performance.now(); last = t0; }
+  function restart() { t0 = performance.now(); last = t0; scrambledCS = false; scrambleId++; showFinalCS(); }
 
   /* Render ------------------------------------------------------------ */
   function render(now) {
@@ -369,10 +411,11 @@
     /* 4. COMING SOON: neon outline fades in, flares once as it lands, then a slow breath */
     const cp = seg(p, 0.56, 0.9), ce = easeOut(cp);
     els.cs.style.opacity = clamp(cp * 2.2);
-    els.cs.style.transform = `translateY(${((1 - ce) * 8).toFixed(2)}vh)`;
     const since = secs - T_CS_FULL;
     const glow = (since > 0 ? Math.exp(-since / 0.9) : 0) + 0.18 * (0.5 + 0.5 * Math.sin(secs * 0.9)) * ce;
     els.cs.style.filter = `drop-shadow(0 0 ${(3 + 6 * glow).toFixed(1)}px rgba(200,225,255,${(0.35 + 0.3 * glow).toFixed(2)})) drop-shadow(0 0 ${(14 + 14 * glow).toFixed(1)}px rgba(70,110,255,${(0.35 + 0.3 * glow).toFixed(2)}))`;
+    /* decrypt COMING SOON in place as it appears */
+    if (!reduceMotion && !scrambledCS && secs >= T_CS) { scrambledCS = true; scrambleCS(1400); }
     const lp = easeOut(seg(p, 0.68, 0.98));
     els.energy.style.transform = `scaleX(${lp.toFixed(3)})`;
     els.energy.style.opacity = (lp * 0.6).toFixed(3);

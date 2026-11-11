@@ -21,7 +21,7 @@ stays on the final screen.
 | 4.0 – 5.1 s | The letters turn to the real silver logo artwork (bevelled titanium, with a soft highlight sweeping across) |
 | 4.7 s | **Title lock:** a short lens flare and glow, and the stars drop out of warp |
 | 3.9 – 7.5 s | A spiral galaxy (looping video) fades up behind the title and the camera settles in, then pushes in slowly |
-| 5.2 – 7.5 s | **COMING SOON** fades in as thin, wide-set white lettering with a faint glow and three pulsing dots, and a thin energy line draws out beneath |
+| 5.2 – 7.5 s | **COMING SOON** appears in place as thin, wide-set white lettering that decrypts from random symbols, left to right (each letter keeps a fixed cell, so nothing moves), with a faint glow and three pulsing dots, and a thin energy line draws out beneath |
 | After | Calm final frame: COMING SOON glows softly and its dots pulse, nebula haze drifts, the galaxy keeps turning and the logo shine sweeps |
 
 - The opening starfield is drawn live on a canvas, so there is no image to wait for.
@@ -105,6 +105,7 @@ It's a static site, so any static host works:
 | Order and overlap of each stage | the `seg(p, start, end)` ranges in `render()` in `main.js` (0 = start of transition, 1 = end) |
 | Final logo size and position | `finalLogo()` in `main.js` |
 | "COMING SOON" text | `index.html` |
+| COMING SOON decrypt duration and symbols | `scrambleCS(1400)` and `SCRAMBLE_CHARS` in `main.js` |
 | "COMING SOON" size, line weight and dots | `.cs-title` and `.dots` in `style.css` |
 | Logo and COMING SOON position | `finalLogo()` in `main.js` (`cy` is the logo's centre as a fraction of screen height; COMING SOON follows it) |
 | Accent / glow colour | `--cyan` at the top of `style.css` |
