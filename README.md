@@ -2,8 +2,8 @@
 
 The coming-soon page for **Titanium 2027**. It's one screen with a sci-fi
 intro that plays by itself on load: you drift through a field of stars, speed up
-into hyperspace and fly into a cutout shaped like the **TITANIUM** letters, the letters turn polished silver,
-a slowly turning galaxy fades up behind them, and **2027 · COMING SOON** fades in.
+into hyperspace and fly into a cutout shaped like the **TITANIUM 2027** logo, the letters turn to polished silver,
+a slowly turning galaxy fades up behind them, and **COMING SOON** fades in.
 
 It's plain HTML, CSS and JavaScript, with no framework, no build step and no dependencies.
 
@@ -18,12 +18,11 @@ stays on the final screen.
 | --- | --- |
 | 0 – 1.6 s | First-person view of deep space filled with stars drifting towards you, through a helmet visor, with coordinates and a speed readout. You start to accelerate with a slow zero-g roll |
 | 1.7 – 4.7 s | The stars stretch into hyperspace streaks as you speed up, and you fly into the TITANIUM letters. The move builds slowly, rushes through the middle and lands smoothly on the title |
-| 4.0 – 5.1 s | The letters turn to polished titanium (chrome band, blue sky reflection, moving highlight) |
+| 4.0 – 5.1 s | The letters turn to the real silver logo artwork (bevelled titanium, with a soft highlight sweeping across) |
 | 4.7 s | **Title lock:** a short lens flare and glow, and the stars drop out of warp |
 | 3.9 – 7.5 s | A spiral galaxy (looping video) fades up behind the title and the camera settles in, then pushes in slowly |
-| 4.9 – 6.3 s | **2027** fades in under the logo |
-| 5.2 – 7.5 s | **COMING SOON** fades in with a cyan → blue → violet gradient. One light pass crosses it as it lands, and a thin energy line draws out beneath |
-| After | Calm final frame: COMING SOON glows softly, nebula haze drifts, the galaxy keeps turning and the logo shine sweeps |
+| 5.2 – 7.5 s | **COMING SOON** fades in as glowing blue neon outline lettering with three pulsing dots, and a thin energy line draws out beneath |
+| After | Calm final frame: COMING SOON glows softly and its dots pulse, nebula haze drifts, the galaxy keeps turning and the logo shine sweeps |
 
 - The opening starfield is drawn live on a canvas, so there is no image to wait for.
 - Visitors with **Reduce motion** turned on in their system settings go straight to the final screen.
@@ -57,7 +56,7 @@ titanium-27/
 └── assets/
     ├── warp.webp           Earlier warp-tunnel photo (not used right now)
     ├── station-wide.webp   Earlier space station view (not used right now)
-    ├── logo-titanium.png   TITANIUM wordmark with transparent background (used as the cutout shape)
+    ├── logo-titanium.png   TITANIUM 2027 logo with transparent background (the cutout shape and the final silver artwork)
     ├── galaxy.mp4          Turning spiral galaxy behind the title (1080p H.264, 24 s seamless loop, muted)
     ├── galaxy-poster.jpg   First frame of the galaxy, shown until the video can play
     ├── earth-surface.webp  Earlier Earth background, base layer (not used right now)
@@ -105,9 +104,9 @@ It's a static site, so any static host works:
 | Transition length | `DUR` in `main.js` (seconds) |
 | Order and overlap of each stage | the `seg(p, start, end)` ranges in `render()` in `main.js` (0 = start of transition, 1 = end) |
 | Final logo size and position | `finalLogo()` in `main.js` |
-| "COMING SOON" and "2027" text | `index.html` |
-| "COMING SOON" size | `.cs-title` `font-size` in `style.css` |
-| "COMING SOON" gradient colours | `.cs-title` in `style.css` **and** the `radial-gradient(...)` line for `csTitle` in `main.js` (the JS one animates it, so change both) |
+| "COMING SOON" text | `index.html` |
+| "COMING SOON" size, line weight and dots | `.cs-title` and `.dots` in `style.css` |
+| Logo and COMING SOON position | `finalLogo()` in `main.js` (`cy` is the logo's centre as a fraction of screen height; COMING SOON follows it) |
 | Accent / glow colour | `--cyan` at the top of `style.css` |
 | HUD labels on the opening frame | `.hud` block in `index.html` |
 | Opening starfield (density, brightness, speed) | `new Space($("heroStars"), count, dust, boost)` and `flight.speed` in `main.js` |

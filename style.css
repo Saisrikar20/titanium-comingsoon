@@ -69,17 +69,37 @@ body {
   opacity: 0;
   will-change: transform, opacity, filter;
 }
+/* neon outline lettering: a thin white line round each letter, hollow inside, blue glow from .cs */
 .cs-title {
+  position: relative;
   font-weight: 400;
   text-transform: uppercase;
   font-size: clamp(22px, 5.2vw, 72px);
   line-height: 1.1;
   white-space: nowrap;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.06em;
   color: transparent;
-  -webkit-background-clip: text;
-  background-clip: text;
-  background-image: radial-gradient(circle at 50% 200vh, #f2fbff 0, #6ad8ff 30vh, #4d6bff 62vh, #9a46ff 95vh, rgba(40, 20, 90, 0) 130vh);
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: max(1px, 0.024em) #f4fbff;
+}
+/* three dots after the words (out of the flow, so the words stay centred) */
+.dots {
+  position: absolute; left: 100%; bottom: 0.3em;
+  margin-left: 0.2em;
+  display: flex; gap: 0.2em;
+}
+.dots i {
+  width: 0.13em; height: 0.13em; min-width: 4px; min-height: 4px;
+  border-radius: 50%;
+  background: #f4fbff;
+  box-shadow: 0 0 6px rgba(106, 216, 255, 0.9), 0 0 14px rgba(77, 107, 255, 0.7);
+  animation: dot 1.8s ease-in-out infinite;
+}
+.dots i:nth-child(2) { animation-delay: 0.3s; }
+.dots i:nth-child(3) { animation-delay: 0.6s; }
+@keyframes dot {
+  0%, 100% { opacity: 0.35; }
+  35% { opacity: 1; }
 }
 /* energy line under COMING SOON */
 .energy {
@@ -92,26 +112,13 @@ body {
   transform: scaleX(0);
   opacity: 0;
 }
-.cs-year {
-  position: absolute; left: 0; right: 0; top: 0;
-  text-align: center;
-  opacity: 0;
-  pointer-events: none;
-  font-size: clamp(14px, 2.1vw, 28px);
-  letter-spacing: 0.55em;
-  padding-left: 0.55em; /* balance trailing letter-spacing */
-  color: #ffffff;
-  -webkit-text-stroke: 0.03em #ffffff;
-  text-shadow: 0 0 14px rgba(var(--cyan), 0.9), 0 0 40px rgba(var(--cyan), 0.5), 0 2px 6px rgba(0,0,0,0.9);
-}
-
 /* ---------- Hero (tunnel through the logo) ---------- */
 .hero-glow { position: absolute; inset: 0; pointer-events: none; }
 .hero {
   position: absolute; inset: 0;
   overflow: hidden;
   -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
-  -webkit-mask-image: url("assets/logo-titanium.png"); mask-image: url("assets/logo-titanium.png");
+  -webkit-mask-image: url("assets/logo-titanium.png?v=3"); mask-image: url("assets/logo-titanium.png?v=3");
 }
 .hero.unmasked { -webkit-mask-image: none; mask-image: none; }
 .cam {
@@ -127,20 +134,25 @@ body {
   background:
     radial-gradient(40% 35% at 30% 35%, rgba(var(--violet), 0.16), transparent 70%),
     radial-gradient(35% 30% at 72% 60%, rgba(var(--blue), 0.14), transparent 70%),
-    radial-gradient(60% 60% at 50% 46%, #070a1c 0%, #03040c 70%, #010207 100%);
+    radial-gradient(60% 60% at 50% 46%, #2a3278 0%, #141a4a 55%, #080b26 100%);
 }
-/* polished titanium: chrome horizon band, blue sky reflection below, moving highlight */
+/* the finished logo: the real silver artwork, fading in over the cutout */
+.hero-logo {
+  position: absolute; inset: 0;
+  opacity: 0;
+  background: url("assets/logo-titanium.png?v=3") 0 0 / 0 0 no-repeat;
+}
+/* a soft highlight that sweeps across the polished metal */
 .hero-fill {
   position: absolute; inset: 0;
   opacity: 0;
-  background:
-    linear-gradient(105deg, transparent 38%, rgba(255,255,255,0.9) 48%, transparent 58%) 0 0 / 250% 100% no-repeat,
-    linear-gradient(to bottom, #ffffff 0%, #e9eef6 20%, #b5c0d0 40%, #6d7a90 49%, #c3cddc 54%, #eef3fa 70%, #a9c2e6 88%, #dbe8fb 100%);
+  mix-blend-mode: soft-light;
+  background: linear-gradient(105deg, transparent 38%, rgba(255,255,255,0.9) 48%, transparent 58%) 0 0 / 250% 100% no-repeat;
   animation: shine 5s ease-in-out infinite;
 }
 @keyframes shine {
-  0%, 40% { background-position: 130% 0, 0 0; }
-  80%, 100% { background-position: -40% 0, 0 0; }
+  0%, 40% { background-position: 130% 0; }
+  80%, 100% { background-position: -40% 0; }
 }
 
 /* ---------- Lens flare ---------- */
@@ -222,6 +234,5 @@ body {
   .hud-tl { left: 28px; top: 28px; }
   .hud-bl { left: 28px; bottom: 28px; }
   .hud-br { right: 28px; bottom: 28px; }
-  .cs { top: 47vh; }
   .snd { right: 18px; bottom: 58px; }
 }

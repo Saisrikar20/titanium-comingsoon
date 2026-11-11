@@ -15,9 +15,9 @@
   const els = {
     stage: $("stage"),
     hero: $("hero"), cam: $("cam"),
-    heroFill: $("heroFill"), heroGlow: $("heroGlow"), flare: $("flare"),
+    heroFill: $("heroFill"), heroLogo: $("heroLogo"), heroGlow: $("heroGlow"), flare: $("flare"),
     hud: $("hud"), vel: $("vel"),
-    cs: $("cs"), csTitle: $("csTitle"), csYear: $("csYear"), energy: $("energy"),
+    cs: $("cs"), csTitle: $("csTitle"), energy: $("energy"),
     galaxy: $("galaxy"), snd: $("snd"),
   };
 
@@ -33,15 +33,15 @@
   const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   /* Logo mask geometry ------------------------------------------------ */
-  const LOGO_AR = 294 / 1218;            // height / width of logo-titanium.png
-  const ANCHOR = { x: 0.546, y: 0.486 }; // solid point inside the letters — the zoom pivots here
-  const ANCHOR_R = 39 / 1218;            // radius of solid area around it, as a fraction of logo width
+  const LOGO_AR = 624 / 1600;            // height / width of logo-titanium.png
+  const ANCHOR = { x: 0.545, y: 0.457 }; // solid point inside the letters — the zoom pivots here
+  const ANCHOR_R = 0.033;                  // radius of solid area around it, as a fraction of logo width
 
   let vw = innerWidth, vh = innerHeight;
   const mobile = () => vw <= 640;
   function finalLogo() {
     const w = Math.min(560, vw * (mobile() ? 0.84 : 0.6));
-    const cy = vh * (mobile() ? 0.3 : 0.27);
+    const cy = vh * 0.47;                                  // the logo sits on the galaxy core
     return { w, h: w * LOGO_AR, left: (vw - w) / 2, top: cy - (w * LOGO_AR) / 2 };
   }
 
@@ -327,6 +327,7 @@
       const size = `${w.toFixed(1)}px auto`, pos = `${mx.toFixed(1)}px ${my.toFixed(1)}px`;
       els.hero.style.webkitMaskSize = size; els.hero.style.maskSize = size;
       els.hero.style.webkitMaskPosition = pos; els.hero.style.maskPosition = pos;
+      els.heroLogo.style.backgroundSize = size; els.heroLogo.style.backgroundPosition = pos;
     }
     const fp = easeOut(seg(p, 0.36, 0.54)); // silver-fill progress
     const settle = 1 - fp;
@@ -343,7 +344,8 @@
 
     /* 2. title locks in: polished titanium, depth shadow, a short glow kick and lens flare */
     const kick = secs >= T_IMPACT ? Math.exp(-(secs - T_IMPACT) / 0.45) : 0;
-    els.heroFill.style.opacity = fp.toFixed(3);
+    els.heroLogo.style.opacity = fp.toFixed(3);
+    els.heroFill.style.opacity = (0.5 * fp).toFixed(3);
     els.heroGlow.style.filter = fp > 0.01
       ? `drop-shadow(0 6px 8px rgba(0,0,0,${(0.55 * fp).toFixed(2)})) drop-shadow(0 0 ${(14 * fp + 20 * kick).toFixed(1)}px rgba(106,216,255,${(0.36 * fp + 0.35 * kick).toFixed(2)}))`
       : "none";
@@ -355,11 +357,8 @@
     /* HUD fades as the transition begins */
     els.hud.style.opacity = (1 - seg(p, 0, 0.12)).toFixed(3);
 
-    /* 2027 just under the logo */
-    const yp = easeOut(seg(p, 0.5, 0.72));
-    els.csYear.style.top = `${(fin.top + fin.h + Math.max(10, fin.w * 0.035)).toFixed(1)}px`;
-    els.csYear.style.opacity = yp.toFixed(3);
-    els.csYear.style.letterSpacing = `${lerp(1.2, 0.55, yp).toFixed(3)}em`;
+    /* COMING SOON sits directly below the logo */
+    els.cs.style.top = `${(fin.top + fin.h + Math.max(28, fin.w * 0.1)).toFixed(1)}px`;
 
     /* 3. the galaxy fades up behind the title, with a slow camera push-in for scale */
     const ep = easeOut(seg(p, 0.36, 0.9));
@@ -367,18 +366,13 @@
     els.galaxy.style.opacity = (0.78 * ep).toFixed(3); // held back so the text stays readable
     els.galaxy.style.transform = `scale(${galaxyPush.toFixed(4)})`;
 
-    /* 4. COMING SOON: travelling gradient reveal, one light pulse as it lands, then a slow breath */
+    /* 4. COMING SOON: neon outline fades in, flares once as it lands, then a slow breath */
     const cp = seg(p, 0.56, 0.9), ce = easeOut(cp);
     els.cs.style.opacity = clamp(cp * 2.2);
     els.cs.style.transform = `translateY(${((1 - ce) * 8).toFixed(2)}vh)`;
-    const gy = lerp(200, 52, ce);
     const since = secs - T_CS_FULL;
-    const sweep = since > 0 ? lerp(-20, 120, seg(since, 0, 1.4)) : -40; // a single light pass as it lands
     const glow = (since > 0 ? Math.exp(-since / 0.9) : 0) + 0.18 * (0.5 + 0.5 * Math.sin(secs * 0.9)) * ce;
-    els.csTitle.style.backgroundImage =
-      `linear-gradient(100deg, transparent ${(sweep - 9).toFixed(1)}%, rgba(255,255,255,0.7) ${sweep.toFixed(1)}%, transparent ${(sweep + 9).toFixed(1)}%),` +
-      `radial-gradient(circle at 50% ${gy.toFixed(1)}vh, #f2fbff 0, #6ad8ff 30vh, #4d6bff 62vh, #9a46ff 95vh, rgba(40,20,90,0) 130vh)`;
-    els.cs.style.filter = `drop-shadow(0 0 ${(6 + 12 * glow).toFixed(1)}px rgba(106,216,255,${(0.22 + 0.3 * glow).toFixed(2)}))`;
+    els.cs.style.filter = `drop-shadow(0 0 ${(5 + 8 * glow).toFixed(1)}px rgba(60,130,255,${(0.75 + 0.25 * glow).toFixed(2)})) drop-shadow(0 0 ${(16 + 18 * glow).toFixed(1)}px rgba(40,100,255,${(0.5 + 0.3 * glow).toFixed(2)}))`;
     const lp = easeOut(seg(p, 0.68, 0.98));
     els.energy.style.transform = `scaleX(${lp.toFixed(3)})`;
     els.energy.style.opacity = (lp * 0.6).toFixed(3);
