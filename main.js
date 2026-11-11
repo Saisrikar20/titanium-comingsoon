@@ -24,18 +24,20 @@
   /* ------------------------------------------------------------------
    * Timeline (seconds).
    * 0.0s – 2.0s : Spaceman waves palm left and right in center
-   * 2.0s – 4.4s : 180° turn & 45° forward dive, legs as anchor pivot, focus on head
-   * 4.4s – 5.4s : HUD appears: "WARP DRIVE · ENGAGED", velocity ramps 0.00c -> 0.99c
-   * 5.4s – 7.0s : WARP ANIMATION: Hyperspace streaks burst, star acceleration, flare
-   * 7.0s – 7.8s : Warp velocity settles into cockpit orbit view
+   * 2.0s – 4.4s : Turns 180°, hands return to normal, model pulled down so helmet is centered (not backpack)
+   * 4.4s – 4.8s : Camera glides right INTO the head/helmet of the model, model dissolves into 1st person
+   * 4.8s – 5.5s : HUD VIEW ACTIVE: "WARP DRIVE · ENGAGED", velocity ramps 0.00c -> 0.99c
+   * 5.5s – 7.1s : WARP ANIMATION: Hyperspace streaks burst, star acceleration, flare
+   * 7.1s – 7.8s : Warp velocity settles into cockpit orbit view
    * 7.8s+       : GAME AR CYLINDRICAL CURVED SCREEN OPENS & LOCKS IN!
    * ------------------------------------------------------------------ */
-  const HOLD = 2.0;                       // Greeting hold, then begins 180° turn & 45° forward dive
-  const T_DIVE_COMPLETE = 4.4;            // Reaches 45° forward dive with legs as pivot, focus on head
-  const T_HUD_APPEAR = 4.4;               // HUD powers on: WARP DRIVE ENGAGED & velocity begins acceleration
-  const T_WARP_FIRE = 5.4;                // Warp drive fires: hyperspace streaks, star acceleration, lens flare
-  const T_WARP_DECEL = 7.0;               // Warp velocity settles to orbital cruising speed
-  const T_HUD_FADE = 7.2;                 // Visor HUD dissolves into cockpit viewport
+  const HOLD = 2.0;                       // Greeting hold, then begins 180° turn & helmet zoom
+  const T_ZOOM_HELMET = 4.4;              // Reaches back of helmet (model pulled down to center helmet dome)
+  const T_ENTER_HEAD = 4.8;               // Enters through helmet into 1st-person POV, model dissolves
+  const T_HUD_APPEAR = 4.8;               // Once inside head: HUD view activates with WARP DRIVE ENGAGED
+  const T_WARP_FIRE = 5.5;                // Warp drive fires: hyperspace streaks, star acceleration, lens flare
+  const T_WARP_DECEL = 7.1;               // Warp velocity settles to orbital cruising speed
+  const T_HUD_FADE = 7.3;                 // Visor HUD dissolves into cockpit viewport
   const T_AR_REVEAL = 7.8;                // Game opening curved AR screen expands from center & displays info!
   const T_ENTER_VISOR = T_WARP_DECEL;
   const T_IMPACT = T_AR_REVEAL;
@@ -339,14 +341,11 @@
     /* ================================================================
      * TIMELINE CHOREOGRAPHY:
      * 0.0s – 2.0s : Spaceman waves palm left and right in center
-     * 2.0s – 4.4s : Turns 180°, hands return to normal, zoom to back of head
-     * 4.4s – 4.8s : Camera glides into helmet visor, model dissolves into 1st person
-     * 4.8s – 6.8s : EXACT 2s GAP: Suspended in cockpit looking at Earth & orbit
-     * 0.0s – 2.0s : Spaceman waves palm left and right in center
-     * 2.0s – 4.4s : 180° turn & 45° forward dive, legs as anchor pivot, focus on head
-     * 4.4s – 5.4s : HUD appears: "WARP DRIVE · ENGAGED", velocity ramps 0.00c -> 0.99c
-     * 5.4s – 7.0s : WARP ANIMATION: Hyperspace streaks burst, star acceleration, flare
-     * 7.0s – 7.8s : Warp velocity settles into cockpit orbit view
+     * 2.0s – 4.4s : Turns 180°, hands return to normal, model pulled down so helmet is centered (not backpack)
+     * 4.4s – 4.8s : Camera glides right INTO the head/helmet of the model, model dissolves into 1st person
+     * 4.8s – 5.5s : HUD VIEW ACTIVE: "WARP DRIVE · ENGAGED", velocity ramps 0.00c -> 0.99c
+     * 5.5s – 7.1s : WARP ANIMATION: Hyperspace streaks burst, star acceleration, flare
+     * 7.1s – 7.8s : Warp velocity settles into cockpit orbit view
      * 7.8s+       : GAME AR CYLINDRICAL CURVED SCREEN OPENS & LOCKS IN!
      * ================================================================ */
 
