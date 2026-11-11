@@ -18,7 +18,7 @@
     heroFill: $("heroFill"), heroGlow: $("heroGlow"), flare: $("flare"),
     hud: $("hud"), vel: $("vel"),
     cs: $("cs"), csTitle: $("csTitle"), csYear: $("csYear"), energy: $("energy"),
-    earthWrap: $("earthWrap"), snd: $("snd"),
+    galaxy: $("galaxy"), snd: $("snd"),
   };
 
   /* ------------------------------------------------------------------
@@ -361,11 +361,11 @@
     els.csYear.style.opacity = yp.toFixed(3);
     els.csYear.style.letterSpacing = `${lerp(1.2, 0.55, yp).toFixed(3)}em`;
 
-    /* 3. Earth rises, then a slow camera push-in for scale */
+    /* 3. the galaxy fades up behind the title, with a slow camera push-in for scale */
     const ep = easeOut(seg(p, 0.36, 0.9));
-    const earthPush = 1 + 0.06 * easeInOut(seg(secs, at(0.45), at(0.45) + 24));
-    els.earthWrap.style.opacity = ep;
-    els.earthWrap.style.transform = `translateX(-50%) translateY(${((1 - ep) * 30).toFixed(2)}vh) scale(${earthPush.toFixed(4)})`;
+    const galaxyPush = 1.08 - 0.08 * ep + 0.05 * easeInOut(seg(secs, at(0.45), at(0.45) + 24));
+    els.galaxy.style.opacity = (0.78 * ep).toFixed(3); // held back so the text stays readable
+    els.galaxy.style.transform = `scale(${galaxyPush.toFixed(4)})`;
 
     /* 4. COMING SOON: travelling gradient reveal, one light pulse as it lands, then a slow breath */
     const cp = seg(p, 0.56, 0.9), ce = easeOut(cp);
