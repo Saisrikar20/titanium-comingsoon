@@ -275,27 +275,31 @@
         spacemanFloat.rotation.z = Math.sin(time * 0.8) * 0.03;
 
       } else if (elapsed <= 4.4) {
-        // --- STAGE 2: Turn around 180°, hands go back to normal, grows bigger zooming to back of head ---
-        const p = easeInOut(clamp((elapsed - 2.0) / 2.2));
+        // --- STAGE 2: Turn around 180°, keeping legs as anchor point, bend forward 45°, camera focused on head ---
+        const p = easeInOut(clamp((elapsed - 2.0) / 2.4));
 
-        // Smoothly turn around 180 degrees from 0.05 to PI (facing back into depth)
+        spacemanModel.rotation.order = "YXZ";
+        // Smoothly turn around 180 degrees from 0.05 to PI (facing into depth)
         spacemanModel.rotation.y = lerp(0.05, Math.PI, p);
-        spacemanModel.rotation.x = 0.0;
+        // BEND FORWARD 45 DEGREES (pitch forward into space, legs anchored below)
+        spacemanModel.rotation.x = lerp(0.0, -Math.PI / 4, p);
 
-        // HE BECOMES BIGGER / ZOOM TO BACK OF HEAD:
-        // Scale expands 3.6x, root moves closer and aligns the back of the helmet in center view
+        // Keep legs as pivot point while centering focus onto the HEAD / HELMET
+        spacemanRoot.position.y = lerp(-0.3, -0.2, p);
+        spacemanRoot.position.z = lerp(0.0, 0.5, p);
+        spacemanFloat.scale.setScalar(lerp(1.0, 1.7, p));
+
+        // Camera stays locked in standard view looking directly at the helmet dome
         camera.position.set(0, 0, 7.5);
-        spacemanFloat.scale.setScalar(lerp(1.0, 3.6, p));
-        spacemanRoot.position.y = lerp(-0.3, -2.65, p);
-        spacemanRoot.position.z = lerp(0, 3.2, p);
+        camera.lookAt(0, 0, 0);
 
-        // Hands go completely back to normal (natural rest posture) as he turns!
+        // Hands go smoothly back to normal resting posture along sides as he turns
         if (bones.leftArm && initialRotations["LeftArm"]) {
           const init = initialRotations["LeftArm"];
           bones.leftArm.rotation.set(
-            lerp(init.x + 1.0, init.x, p),
+            lerp(init.x + 1.0, init.x + 0.2, p),
             init.y,
-            lerp(init.z - 0.3, init.z, p)
+            lerp(init.z - 0.3, init.z - 0.1, p)
           );
         }
         if (bones.leftForeArm && initialRotations["LeftForeArm"]) {
@@ -315,10 +319,10 @@
           );
         }
 
-        // Right arm stays in normal rest position
+        // Right arm rests naturally along side
         if (bones.rightArm && initialRotations["RightArm"]) {
           const init = initialRotations["RightArm"];
-          bones.rightArm.rotation.set(init.x, init.y, init.z);
+          bones.rightArm.rotation.set(lerp(init.x, init.x + 0.2, p), init.y, lerp(init.z, init.z + 0.1, p));
         }
         if (bones.rightForeArm && initialRotations["RightForeArm"]) {
           const init = initialRotations["RightForeArm"];
@@ -329,7 +333,7 @@
           bones.rightHand.rotation.set(init.x, init.y, init.z);
         }
 
-        // Legs stay in natural zero-g relaxation
+        // Legs stay relaxed trailing in microgravity
         if (bones.leftLeg && initialRotations["LeftLeg"]) {
           const init = initialRotations["LeftLeg"];
           bones.leftLeg.rotation.set(init.x - 0.05, init.y, init.z);
@@ -339,29 +343,49 @@
           bones.rightLeg.rotation.set(init.x - 0.05, init.y, init.z);
         }
 
-        // Head looks forward into space as he turns
+        // Head looks forward into deep space
         if (bones.head && initialRotations["Head"]) {
           const init = initialRotations["Head"];
-          bones.head.rotation.set(init.x, init.y, init.z);
+          bones.head.rotation.set(lerp(init.x, init.x - 0.4, p), init.y, init.z);
         }
 
-        // Subtle zero-g floating
-        spacemanFloat.position.y = Math.sin(time * 1.5) * 0.03 * (1 - p);
-        spacemanFloat.rotation.z = Math.sin(time * 1.2) * 0.02 * (1 - p);
+      } else if (elapsed <= 5.4) {
+        // --- STAGE 3: Suspended in 45° space dive while HUD shows "WARP DRIVE · ENGAGED" ---
+        spacemanModel.rotation.order = "YXZ";
+        spacemanModel.rotation.y = Math.PI;
+        spacemanModel.rotation.x = -Math.PI / 4; // Held at 45° forward dive
 
-      } else if (elapsed <= 4.9) {
-        // --- STAGE 3: Camera pushes right through into helmet visor & model dissolves ---
-        const enterP = clamp((elapsed - 4.4) / 0.5);
+        spacemanRoot.position.set(0, -0.2 + Math.sin(time * 1.5) * 0.02, 0.5);
+        spacemanFloat.scale.setScalar(1.7);
 
-        // Continue zoom right through the helmet
+        // Camera stays locked in focus on the head
         camera.position.set(0, 0, 7.5);
-        spacemanFloat.scale.setScalar(lerp(3.6, 5.2, enterP));
-        spacemanRoot.position.z = lerp(3.2, 5.2, enterP);
-        spacemanRoot.position.y = lerp(-2.65, -3.2, enterP);
+        camera.lookAt(0, 0, 0);
 
-        // Dissolve model as we step into 1st-person visor perspective
-        const alpha = Math.max(0, 1 - enterP * 1.3);
-        canvas.style.opacity = alpha.toFixed(3);
+        if (bones.head && initialRotations["Head"]) {
+          const init = initialRotations["Head"];
+          bones.head.rotation.set(init.x - 0.4, init.y, init.z);
+        }
+
+        spacemanCanvas.style.opacity = "1";
+
+      } else if (elapsed <= 7.0) {
+        // --- STAGE 4: WARP ANIMATION - astronaut shoots forward into warp stream & dissolves ---
+        const wp = easeIn(clamp((elapsed - 5.4) / 1.4));
+
+        spacemanModel.rotation.order = "YXZ";
+        spacemanModel.rotation.y = Math.PI;
+        spacemanModel.rotation.x = -Math.PI / 4;
+
+        spacemanRoot.position.z = lerp(0.5, -14.0, wp);
+        spacemanRoot.position.y = lerp(-0.2, -0.6, wp);
+        spacemanFloat.scale.setScalar(lerp(1.7, 1.2, wp));
+
+        camera.position.set(0, 0, 7.5);
+        camera.lookAt(0, 0, 0);
+
+        // Fades out into the hyperspace vortex
+        spacemanCanvas.style.opacity = (1 - easeIn(clamp((elapsed - 5.6) / 0.8))).toFixed(3);
 
       } else {
         // --- STAGE 4: REMOVED & Game AR view active ---

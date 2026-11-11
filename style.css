@@ -758,9 +758,25 @@ body {
 }
 
 /* ---------- HUD ---------- */
-.hud { position: absolute; inset: 0; pointer-events: none; font-size: 11px; letter-spacing: 0.28em; color: var(--dim); }
+.hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font-size: 11px;
+  letter-spacing: 0.28em;
+  color: var(--dim);
+  opacity: 0;
+  z-index: 5;
+  transition: opacity 0.3s ease-out;
+}
 .hud-tl { position: absolute; top: 30px; left: 34px; color: var(--ink); }
-.hud-tr { position: absolute; top: 30px; right: 34px; }
+.hud-tr {
+  position: absolute;
+  top: 30px;
+  right: 34px;
+  color: #00f0ff;
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.8), 0 0 20px rgba(0, 240, 255, 0.5);
+}
 .hud-bl { position: absolute; bottom: 30px; left: 34px; font-size: 10px; letter-spacing: 0.22em; }
 .hud-br { position: absolute; bottom: 30px; right: 34px; font-size: 10px; letter-spacing: 0.22em; color: rgb(var(--cyan)); font-variant-numeric: tabular-nums; }
 /* helmet visor: curved glass reflection + slight edge falloff */

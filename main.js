@@ -24,15 +24,20 @@
   /* ------------------------------------------------------------------
    * Timeline (seconds).
    * 0.0s – 2.0s : Spaceman waves palm left and right in center
-   * 2.0s – 4.4s : Turns 180°, hands return to normal, zoom to back of head
-   * 4.4s – 4.8s : Camera glides into helmet visor, model dissolves into 1st person
-   * 4.8s – 6.8s : EXACT 2s GAP: Suspended in cockpit looking at Earth & orbit
-   * 6.8s+       : GAME AR CYLINDRICAL CURVED SCREEN OPENS & LOCKS IN!
+   * 2.0s – 4.4s : 180° turn & 45° forward dive, legs as anchor pivot, focus on head
+   * 4.4s – 5.4s : HUD appears: "WARP DRIVE · ENGAGED", velocity ramps 0.00c -> 0.99c
+   * 5.4s – 7.0s : WARP ANIMATION: Hyperspace streaks burst, star acceleration, flare
+   * 7.0s – 7.8s : Warp velocity settles into cockpit orbit view
+   * 7.8s+       : GAME AR CYLINDRICAL CURVED SCREEN OPENS & LOCKS IN!
    * ------------------------------------------------------------------ */
-  const HOLD = 2.0;                       // greeting hold, then begins turn & zoom
-  const T_ZOOM_HEAD = 4.4;                // reaches back of head
-  const T_ENTER_VISOR = 4.8;              // enters 1st-person visor
-  const T_AR_REVEAL = 6.8;                // 2s gap after visor entry -> AR cylindrical screen opens!
+  const HOLD = 2.0;                       // Greeting hold, then begins 180° turn & 45° forward dive
+  const T_DIVE_COMPLETE = 4.4;            // Reaches 45° forward dive with legs as pivot, focus on head
+  const T_HUD_APPEAR = 4.4;               // HUD powers on: WARP DRIVE ENGAGED & velocity begins acceleration
+  const T_WARP_FIRE = 5.4;                // Warp drive fires: hyperspace streaks, star acceleration, lens flare
+  const T_WARP_DECEL = 7.0;               // Warp velocity settles to orbital cruising speed
+  const T_HUD_FADE = 7.2;                 // Visor HUD dissolves into cockpit viewport
+  const T_AR_REVEAL = 7.8;                // Game opening curved AR screen expands from center & displays info!
+  const T_ENTER_VISOR = T_WARP_DECEL;
   const T_IMPACT = T_AR_REVEAL;
   const DUR = 5.0;
   const at = (p) => HOLD + p * DUR;
@@ -337,12 +342,17 @@
      * 2.0s – 4.4s : Turns 180°, hands return to normal, zoom to back of head
      * 4.4s – 4.8s : Camera glides into helmet visor, model dissolves into 1st person
      * 4.8s – 6.8s : EXACT 2s GAP: Suspended in cockpit looking at Earth & orbit
-     * 6.8s+       : GAME AR CYLINDRICAL CURVED SCREEN OPENS & LOCKS IN!
+     * 0.0s – 2.0s : Spaceman waves palm left and right in center
+     * 2.0s – 4.4s : 180° turn & 45° forward dive, legs as anchor pivot, focus on head
+     * 4.4s – 5.4s : HUD appears: "WARP DRIVE · ENGAGED", velocity ramps 0.00c -> 0.99c
+     * 5.4s – 7.0s : WARP ANIMATION: Hyperspace streaks burst, star acceleration, flare
+     * 7.0s – 7.8s : Warp velocity settles into cockpit orbit view
+     * 7.8s+       : GAME AR CYLINDRICAL CURVED SCREEN OPENS & LOCKS IN!
      * ================================================================ */
 
     // 1. Warp thrust & hyperspace dynamics
-    const inWarp = secs >= HOLD && secs < T_ENTER_VISOR;
-    const warpProgress = seg(secs, HOLD, T_ENTER_VISOR);
+    const inWarp = secs >= T_WARP_FIRE && secs < T_WARP_DECEL;
+    const warpProgress = seg(secs, T_WARP_FIRE, T_WARP_DECEL);
     const thrust = inWarp ? easeFlight(warpProgress) : 0;
     const settled = secs >= T_AR_REVEAL ? easeOut(seg(secs, T_AR_REVEAL, T_AR_REVEAL + 0.8)) : 0;
 
@@ -352,55 +362,72 @@
 
     // Warp velocity readout
     if (els.vel) {
-      if (secs < HOLD) {
+      if (secs < T_HUD_APPEAR) {
         els.vel.textContent = "0.00";
-      } else if (secs < T_ENTER_VISOR) {
-        els.vel.textContent = (0.99 * thrust).toFixed(2);
+      } else if (secs < T_WARP_FIRE) {
+        const acc = easeIn(seg(secs, T_HUD_APPEAR, T_WARP_FIRE));
+        els.vel.textContent = (0.99 * acc).toFixed(2);
+      } else if (secs < T_WARP_DECEL) {
+        els.vel.textContent = "0.99";
       } else {
-        const dockP = seg(secs, T_ENTER_VISOR, T_AR_REVEAL);
-        els.vel.textContent = lerp(0.99, 0.12, dockP).toFixed(2);
+        const dockP = seg(secs, T_WARP_DECEL, T_AR_REVEAL);
+        els.vel.textContent = lerp(0.99, 0.12, easeOut(dockP)).toFixed(2);
       }
     }
 
     // 2. Starfield & FX speeds
-    if (inWarp) {
-      space.speed = lerp(0.03, 2.8, thrust);
-    } else if (secs >= T_ENTER_VISOR && secs < T_AR_REVEAL) {
-      const decel = 1 - seg(secs, T_ENTER_VISOR, T_AR_REVEAL);
-      space.speed = 0.03 + 2.8 * decel * decel;
+    if (secs < T_HUD_APPEAR) {
+      space.speed = 0.03; // Calm drifting stars during spaceman greeting & turn
+    } else if (secs < T_WARP_FIRE) {
+      space.speed = lerp(0.03, 0.45, seg(secs, T_HUD_APPEAR, T_WARP_FIRE));
+    } else if (inWarp) {
+      space.speed = lerp(0.45, 3.4, thrust);
+    } else if (secs >= T_WARP_DECEL && secs < T_AR_REVEAL) {
+      const decel = 1 - seg(secs, T_WARP_DECEL, T_AR_REVEAL);
+      space.speed = 0.03 + 3.0 * decel * decel;
     } else if (secs >= T_AR_REVEAL) {
       space.speed = 0.03 + 1.2 * Math.exp(-(secs - T_AR_REVEAL) * 1.8);
-    } else {
-      space.speed = 0.03; // Calm drifting stars during spaceman stages
     }
     space.frame(dt);
 
-    // Hyperspace streaks
+    // Hyperspace streaks (engage during warp)
     fx.frame(dt, {
       secs,
-      streakA: reduceMotion ? 0 : (inWarp ? lerp(0.15, 0.9, thrust) : 0),
-      streakV: lerp(0.25, 2.2, thrust),
+      streakA: reduceMotion ? 0 : (inWarp ? lerp(0.15, 0.95, thrust) : 0),
+      streakV: lerp(0.25, 2.8, thrust),
     });
 
-    // 3. Opening HUD visor fade
+    // 3. HUD visor: emerges after 45° dive, shows WARP DRIVE · ENGAGED, fades out at orbit arrival
     if (els.hud) {
-      els.hud.style.opacity = (1 - seg(secs, 0.4, 2.0)).toFixed(3);
+      if (secs < T_HUD_APPEAR) {
+        els.hud.style.opacity = "0";
+      } else if (secs < T_HUD_APPEAR + 0.35) {
+        const hudIn = easeOut(seg(secs, T_HUD_APPEAR, T_HUD_APPEAR + 0.35));
+        els.hud.style.opacity = hudIn.toFixed(3);
+      } else if (secs < T_HUD_FADE) {
+        els.hud.style.opacity = "1";
+      } else {
+        const hudOut = 1 - easeOut(seg(secs, T_HUD_FADE, T_HUD_FADE + 0.45));
+        els.hud.style.opacity = hudOut.toFixed(3);
+      }
     }
 
     // 4. Galaxy background fade & push-in behind the AR screen
     if (els.galaxy) {
-      const gp = easeOut(seg(secs, T_ENTER_VISOR - 0.2, T_ENTER_VISOR + 1.4));
+      const gp = easeOut(seg(secs, T_WARP_FIRE + 0.4, T_WARP_DECEL + 0.8));
       const galaxyPush = 1.05 - 0.05 * gp + 0.04 * easeInOut(seg(secs, T_AR_REVEAL, T_AR_REVEAL + 24));
       els.galaxy.style.opacity = (0.78 * gp).toFixed(3);
       els.galaxy.style.transform = `scale(${galaxyPush.toFixed(4)})`;
     }
 
-    // 5. Flare kick at AR screen reveal
-    const kick = secs >= T_AR_REVEAL ? Math.exp(-(secs - T_AR_REVEAL) / 0.45) : 0;
+    // 5. Flare kicks at warp launch and AR screen reveal
+    const warpKick = inWarp ? Math.exp(-(secs - T_WARP_FIRE) / 0.4) : 0;
+    const arKick = secs >= T_AR_REVEAL ? Math.exp(-(secs - T_AR_REVEAL) / 0.45) : 0;
+    const kick = Math.max(warpKick, arKick);
     if (els.flare) {
       els.flare.style.top = `${(vh * 0.45).toFixed(1)}px`;
       els.flare.style.opacity = (kick * 0.85).toFixed(3);
-      els.flare.style.transform = `translate(-50%, -50%) scaleX(${(0.3 + 0.7 * easeOut(seg(secs, T_AR_REVEAL, T_AR_REVEAL + 0.4))).toFixed(3)})`;
+      els.flare.style.transform = `translate(-50%, -50%) scaleX(${(0.3 + 0.7 * (kick > 0.05 ? 1 : 0)).toFixed(3)})`;
     }
 
     // 6. GAME OPENING EXPANSION FROM CENTER FOR CYLINDRICAL AR SCREEN
