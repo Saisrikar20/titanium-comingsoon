@@ -22,6 +22,41 @@
   };
 
   /* ------------------------------------------------------------------
+   * Scramble Decryption Effect (Coming Soon only)
+   * ------------------------------------------------------------------ */
+  const SCRAMBLE_CHARS = "0123456789ABCDEF/\\><][}{—=+*#ΔΛΩ";
+  function scrambleText(element, targetText, duration = 1400) {
+    let frameId;
+    const startTime = performance.now();
+    function tick(now) {
+      const elapsed = now - startTime;
+      const progress = clamp(elapsed / duration);
+      const lockedChars = Math.floor(progress * targetText.length);
+
+      let text = "";
+      for (let i = 0; i < targetText.length; i++) {
+        if (targetText[i] === " ") {
+          text += " ";
+        } else if (i < lockedChars) {
+          text += targetText[i];
+        } else {
+          text += SCRAMBLE_CHARS[(Math.random() * SCRAMBLE_CHARS.length) | 0];
+        }
+      }
+      element.textContent = text;
+      if (progress < 1) {
+        frameId = requestAnimationFrame(tick);
+      } else {
+        element.textContent = targetText;
+      }
+    }
+    frameId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frameId);
+  }
+
+  let scrambledCS = false;
+
+  /* ------------------------------------------------------------------
    * Timeline (seconds). The page holds, then plays the transition once.
    * ------------------------------------------------------------------ */
   const HOLD = 1.6;                       // seconds in the tunnel before the transition starts
@@ -156,8 +191,6 @@
       }
 
       ctx.globalCompositeOperation = "source-over";
-
-
     }
   }
 
@@ -203,13 +236,10 @@
     noiseSrc(loop = true) { const s = this.ctx.createBufferSource(); s.buffer = this.noiseBuf; s.loop = loop; return this.track(s); }
     osc(type, f) { const o = this.ctx.createOscillator(); o.type = type; o.frequency.value = f; return this.track(o); }
 
-    // schedule the whole score; t = context time at which the visual timeline is at 0 s
     play(t) {
       const ctx = this.ctx;
       this.stopAll();
 
-      // 1. atmospheric ambience: deep filtered rumble + low drone that breathes
-      // a bus for everything except the hit, so it can drop out for a beat before the impact
       const bed = ctx.createGain(); bed.gain.setValueAtTime(1, t);
       bed.gain.setValueAtTime(1, t + T_IMPACT - 0.22);
       bed.gain.linearRampToValueAtTime(0.12, t + T_IMPACT - 0.04);
@@ -227,7 +257,6 @@
         o.connect(g); this.out(g, 1, 0.2, bed); o.start(t); lfo.start(t);
       }
 
-      // 2. rising engine: detuned saws through a slowly opening filter, peaking at the title lock
       const eg = ctx.createGain(), ef = ctx.createBiquadFilter(); ef.type = "lowpass"; ef.Q.value = 4;
       ef.frequency.setValueAtTime(120, t); ef.frequency.exponentialRampToValueAtTime(2600, t + T_IMPACT);
       ef.frequency.exponentialRampToValueAtTime(220, t + T_IMPACT + 2.5);
@@ -244,7 +273,6 @@
       }
       ef.connect(eg); this.out(eg, 1, 0.25, bed);
 
-      // 3. tension riser: airy noise climbing in pitch and level all the way to the hit
       const rn = this.noiseSrc(false), rf = ctx.createBiquadFilter(), rg = ctx.createGain();
       rf.type = "bandpass"; rf.Q.value = 2.2;
       rf.frequency.setValueAtTime(300, t + 0.4); rf.frequency.exponentialRampToValueAtTime(5200, t + T_IMPACT - 0.05);
@@ -252,14 +280,10 @@
       rg.gain.linearRampToValueAtTime(0.0001, t + T_IMPACT);
       rn.connect(rf); rf.connect(rg); this.out(rg, 1, 0.4, bed); rn.start(t + 0.4); rn.stop(t + T_IMPACT + 0.1);
 
-      // 4. transition whooshes
-      this.whoosh(t + HOLD - 0.3, 2.4, 220, 3800, 0.2, bed);    // into the jump
-      this.whoosh(t + T_CS - 0.1, 1.6, 3000, 400, 0.07, bed);   // COMING SOON settles in
+      this.whoosh(t + HOLD - 0.3, 2.4, 220, 3800, 0.2, bed);
+      this.whoosh(t + T_CS - 0.1, 1.6, 3000, 400, 0.07, bed);
 
-      // 5. bass impact as the title locks (bypasses the drop-out so it lands at full weight)
       this.impact(t + T_IMPACT);
-
-      // 6. soft shimmer as COMING SOON appears
       this.shimmer(t + T_CS + 0.2);
     }
     whoosh(t, dur, f0, f1, vol, bus) {
@@ -299,12 +323,16 @@
 
   /* ------------------------------------------------------------------ */
   const space = new Space($("stars"), 1500, 40, 0.15);
-  const flight = new Space($("heroStars"), 4500, 60, 0.45); // the starfield you fly through at the start
+  const flight = new Space($("heroStars"), 4500, 60, 0.45);
   const fx = new FX($("fx"));
   const sound = new Sound();
 
   let t0 = performance.now(), last = t0;
-  function restart() { t0 = performance.now(); last = t0; }
+  function restart() {
+    t0 = performance.now();
+    last = t0;
+    scrambledCS = false;
+  }
 
   /* Render ------------------------------------------------------------ */
   function render(now) {
@@ -316,12 +344,12 @@
 
     /* 1. the tunnel shrinks into the TITANIUM letters (0.02 → 0.48), landing on the title lock */
     const mp = easeFlight(seg(p, 0.02, 0.48));
-    const startW = (Math.hypot(vw, vh) * 0.62) / ANCHOR_R; // big enough that one solid stem covers the screen
+    const startW = (Math.hypot(vw, vh) * 0.62) / ANCHOR_R;
     const w = Math.exp(lerp(Math.log(startW), Math.log(fin.w), mp));
     const ax = lerp(vw / 2, fin.left + ANCHOR.x * fin.w, mp);
     const ay = lerp(vh / 2, fin.top + ANCHOR.y * fin.h, mp);
     const mx = ax - ANCHOR.x * w, my = ay - ANCHOR.y * w * LOGO_AR;
-    const masked = w * ANCHOR_R < Math.hypot(vw, vh) * 0.55; // before this, one solid stem covers everything
+    const masked = w * ANCHOR_R < Math.hypot(vw, vh) * 0.55;
     els.hero.classList.toggle("unmasked", !masked);
     if (masked) {
       const size = `${w.toFixed(1)}px auto`, pos = `${mx.toFixed(1)}px ${my.toFixed(1)}px`;
@@ -329,14 +357,14 @@
       els.hero.style.webkitMaskPosition = pos; els.hero.style.maskPosition = pos;
       els.heroLogo.style.backgroundSize = size; els.heroLogo.style.backgroundPosition = pos;
     }
-    const fp = easeOut(seg(p, 0.36, 0.54)); // silver-fill progress
+    const fp = easeOut(seg(p, 0.36, 0.54));
     const settle = 1 - fp;
 
     /* first-person flight: cruise through the stars, then accelerate into the letters */
-    const thrust = easeInOut(clamp(secs / T_IMPACT));            // 0 → 1 as you reach the logo
-    const roll = 0.6 * Math.sin(secs * 0.8) * settle;           // slow zero-g drift
+    const thrust = easeInOut(clamp(secs / T_IMPACT));
+    const roll = 0.6 * Math.sin(secs * 0.8) * settle;
     els.cam.style.transform = reduceMotion ? "none" : `rotate(${roll.toFixed(3)}deg)`;
-    if (fp < 1) { // hidden under the silver fill once the title has locked
+    if (fp < 1) {
       flight.speed = reduceMotion ? 0.03 : lerp(0.35, 3.4, easeIn(thrust));
       flight.frame(dt);
     }
@@ -363,7 +391,7 @@
     /* 3. the galaxy fades up behind the title, with a slow camera push-in for scale */
     const ep = easeOut(seg(p, 0.36, 0.9));
     const galaxyPush = 1.08 - 0.08 * ep + 0.05 * easeInOut(seg(secs, at(0.45), at(0.45) + 24));
-    els.galaxy.style.opacity = (0.78 * ep).toFixed(3); // held back so the text stays readable
+    els.galaxy.style.opacity = (0.78 * ep).toFixed(3);
     els.galaxy.style.transform = `scale(${galaxyPush.toFixed(4)})`;
 
     /* 4. COMING SOON: neon outline fades in, flares once as it lands, then a slow breath */
@@ -376,6 +404,12 @@
     const lp = easeOut(seg(p, 0.68, 0.98));
     els.energy.style.transform = `scaleX(${lp.toFixed(3)})`;
     els.energy.style.opacity = (lp * 0.6).toFixed(3);
+
+    /* Trigger scramble decryption strictly for Coming Soon */
+    if (!reduceMotion && !scrambledCS && secs >= T_CS) {
+      scrambledCS = true;
+      scrambleText(els.csTitle, "Coming Soon", 1400);
+    }
 
     /* stars: streak during the jump, then decelerate out of warp */
     space.speed = secs < T_IMPACT ? lerp(0.03, 2.6, easeIn(mp)) : 0.03 + 2.6 * Math.exp(-(secs - T_IMPACT) * 1.6);
