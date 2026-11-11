@@ -56,7 +56,7 @@ titanium-27/
     ├── warp.webp           Earlier warp-tunnel photo (not used right now)
     ├── station-wide.webp   Earlier space station view (not used right now)
     ├── logo-titanium.png   TITANIUM 2027 logo with transparent background (the cutout shape and the final silver artwork)
-    ├── backdrop.mp4        Backdrop video: the ring turning above the planet (1280×720, H.264, about 8.5 s, seamless loop, muted)
+    ├── backdrop.mp4        Backdrop video: the ring turning above the planet (1280×720, H.264, 8.5 s, seamless loop, muted)
     ├── backdrop-poster.jpg First frame of the video, shown until it can play
     ├── nebula.webp         Alternative blue and violet nebula background (not used right now)
     ├── logo-titanium-2026.png  Logo as supplied, with 2026 (not used right now)
@@ -118,7 +118,7 @@ Safari.
 
 ## Credits
 
-- **Backdrop video**: supplied by the Titanium team (a corner watermark painted out, enlarged to 720p and sharpened, with a crossfaded loop). A higher-resolution original would look sharper on large screens.
+- **Backdrop video**: supplied by the Titanium team (a corner watermark painted out of every frame, with a crossfaded loop). It is 720p, so a 1080p original would look sharper on large screens.
 - **Earth photo** (earlier version, no longer shown): Apollo 17 "Blue Marble" (AS17-148-22727), NASA. Restored version by Toby Ord, from [tobyord.com/earth](https://www.tobyord.com/earth).
 - **Fonts**: [Michroma](https://fonts.google.com/specimen/Michroma) (HUD labels) and [Gruppo](https://fonts.google.com/specimen/Gruppo) (COMING SOON), served from Google Fonts (SIL Open Font License).
 - **Warp tunnel image** (earlier version, no longer shown): "A purple and blue background with lines of light" by [Anton Filatov](https://unsplash.com/@antony123antony) on [Unsplash](https://unsplash.com/photos/a-purple-and-blue-background-with-lines-of-light-O_5SJuSOxZA), free to use under the Unsplash License (colour-graded with extra brightness, bloom and a bright core).
