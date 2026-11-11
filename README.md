@@ -21,7 +21,7 @@ stays on the final screen.
 | 4.0 – 5.1 s | The letters turn to the real silver logo artwork (bevelled titanium, with a soft highlight sweeping across) |
 | 4.7 s | **Title lock:** a short lens flare and glow, and the stars drop out of warp |
 | 3.9 – 7.5 s | A spiral galaxy (looping video) fades up behind the title and the camera settles in, then pushes in slowly |
-| 5.2 – 7.5 s | **COMING SOON** fades in as glowing blue neon outline lettering with three pulsing dots, and a thin energy line draws out beneath |
+| 5.2 – 7.5 s | **COMING SOON** fades in as thin, wide-set white lettering with a faint glow and three pulsing dots, and a thin energy line draws out beneath |
 | After | Calm final frame: COMING SOON glows softly and its dots pulse, nebula haze drifts, the galaxy keeps turning and the logo shine sweeps |
 
 - The opening starfield is drawn live on a canvas, so there is no image to wait for.
@@ -133,7 +133,7 @@ Safari.
 
 - **Galaxy video**: provided by the Titanium team (re-encoded to 1080p with a crossfaded loop).
 - **Earth photo** (earlier version, no longer shown): Apollo 17 "Blue Marble" (AS17-148-22727), NASA. Restored version by Toby Ord, from [tobyord.com/earth](https://www.tobyord.com/earth).
-- **Font**: [Michroma](https://fonts.google.com/specimen/Michroma) by Vernon Adams, served from Google Fonts (SIL Open Font License).
+- **Fonts**: [Michroma](https://fonts.google.com/specimen/Michroma) (HUD labels) and [Gruppo](https://fonts.google.com/specimen/Gruppo) (COMING SOON), served from Google Fonts (SIL Open Font License).
 - **Warp tunnel image** (earlier version, no longer shown): "A purple and blue background with lines of light" by [Anton Filatov](https://unsplash.com/@antony123antony) on [Unsplash](https://unsplash.com/photos/a-purple-and-blue-background-with-lines-of-light-O_5SJuSOxZA), free to use under the Unsplash License (colour-graded with extra brightness, bloom and a bright core).
 - **Station artwork and TITANIUM logo**: provided by the Titanium team.
 - **Transition idea**: based on the logo-mask transition from the Titanium 2026 site.

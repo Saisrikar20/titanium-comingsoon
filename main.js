@@ -372,7 +372,7 @@
     els.cs.style.transform = `translateY(${((1 - ce) * 8).toFixed(2)}vh)`;
     const since = secs - T_CS_FULL;
     const glow = (since > 0 ? Math.exp(-since / 0.9) : 0) + 0.18 * (0.5 + 0.5 * Math.sin(secs * 0.9)) * ce;
-    els.cs.style.filter = `drop-shadow(0 0 ${(5 + 8 * glow).toFixed(1)}px rgba(60,130,255,${(0.75 + 0.25 * glow).toFixed(2)})) drop-shadow(0 0 ${(16 + 18 * glow).toFixed(1)}px rgba(40,100,255,${(0.5 + 0.3 * glow).toFixed(2)}))`;
+    els.cs.style.filter = `drop-shadow(0 0 ${(3 + 6 * glow).toFixed(1)}px rgba(200,225,255,${(0.35 + 0.3 * glow).toFixed(2)})) drop-shadow(0 0 ${(14 + 14 * glow).toFixed(1)}px rgba(70,110,255,${(0.35 + 0.3 * glow).toFixed(2)}))`;
     const lp = easeOut(seg(p, 0.68, 0.98));
     els.energy.style.transform = `scaleX(${lp.toFixed(3)})`;
     els.energy.style.opacity = (lp * 0.6).toFixed(3);
