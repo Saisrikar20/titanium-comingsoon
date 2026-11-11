@@ -14,7 +14,7 @@
 
   const els = {
     stage: $("stage"),
-    hero: $("hero"), heroImg: $("heroImg"), cam: $("cam"), rushA: $("rushA"), rushB: $("rushB"), core: $("core"),
+    hero: $("hero"), cam: $("cam"),
     heroFill: $("heroFill"), heroGlow: $("heroGlow"), flare: $("flare"),
     hud: $("hud"), vel: $("vel"),
     cs: $("cs"), csTitle: $("csTitle"), csYear: $("csYear"), energy: $("energy"),
@@ -58,11 +58,11 @@
    * ------------------------------------------------------------------ */
   const STAR_TINTS = ["255,255,255", "214,228,255", "180,205,255", "200,190,255", "255,236,214"];
   class Space {
-    constructor(canvas) {
-      this.c = canvas; this.speed = 0.03;
+    constructor(canvas, stars = 520, dust = 40, boost = 0) {
+      this.c = canvas; this.speed = 0.03; this.boost = boost;
       this.resize();
-      this.stars = Array.from({ length: 520 }, () => this.spawn(true));
-      this.dust = Array.from({ length: 40 }, () => this.spawnDust());
+      this.stars = Array.from({ length: stars }, () => this.spawn(true));
+      this.dust = Array.from({ length: dust }, () => this.spawnDust());
     }
     resize() { this.ctx = sizeCanvas(this.c); this.w = this.c.clientWidth; this.h = this.c.clientHeight; }
     spawn(any) {
@@ -87,7 +87,7 @@
         const sx = cx + (s.x / s.z) * f, sy = cy + (s.y / s.z) * f;
         if (sx < -40 || sx > w + 40 || sy < -40 || sy > h + 40) { Object.assign(s, this.spawn(false)); continue; }
         const near = 1 - s.z;
-        const a = clamp(near * 1.2 * (0.35 + 0.65 * s.mag + 0.25)) * (0.92 + 0.08 * Math.sin(s.tw));
+        const a = clamp((near * 1.2 + this.boost) * (0.35 + 0.65 * s.mag + 0.25)) * (0.92 + 0.08 * Math.sin(s.tw));
         const size = 0.35 + near * 1.1 + s.mag * 1.6;
         if (streak) {
           const px = cx + (s.x / s.pz) * f, py = cy + (s.y / s.pz) * f;
@@ -299,16 +299,12 @@
 
   /* ------------------------------------------------------------------ */
   const space = new Space($("stars"));
+  const flight = new Space($("heroStars"), 1800, 60, 0.35); // the starfield you fly through at the start
   const fx = new FX($("fx"));
   const sound = new Sound();
 
   let t0 = performance.now(), last = t0;
-  let rushPhase = 0;
-
-  function restart() {
-    t0 = performance.now(); last = t0;
-    rushPhase = 0;
-  }
+  function restart() { t0 = performance.now(); last = t0; }
 
   /* Render ------------------------------------------------------------ */
   function render(now) {
@@ -335,19 +331,14 @@
     const fp = easeOut(seg(p, 0.36, 0.54)); // silver-fill progress
     const settle = 1 - fp;
 
-    /* first-person flight: accelerate down the tunnel and keep flying into the letters */
+    /* first-person flight: cruise through the stars, then accelerate into the letters */
     const thrust = easeInOut(clamp(secs / T_IMPACT));            // 0 → 1 as you reach the logo
-    const push = Math.exp(0.55 * thrust) * (1 + 0.015 * Math.sin(secs * 1.3));
     const roll = 0.6 * Math.sin(secs * 0.8) * settle;           // slow zero-g drift
-    els.cam.style.transform = reduceMotion ? "none" : `rotate(${roll.toFixed(3)}deg) scale(${push.toFixed(4)})`;
-
-    rushPhase += dt * lerp(0.9, 2.8, thrust);
-    for (const [el, off] of [[els.rushA, 0], [els.rushB, 0.5]]) {
-      const f = (rushPhase + off) % 1;
-      el.style.transform = `scale(${(1 + (0.25 + 0.2 * thrust) * f).toFixed(4)})`;
-      el.style.opacity = (Math.sin(Math.PI * f) * lerp(0.28, 0.5, thrust) * settle).toFixed(3);
+    els.cam.style.transform = reduceMotion ? "none" : `rotate(${roll.toFixed(3)}deg)`;
+    if (fp < 1) { // hidden under the silver fill once the title has locked
+      flight.speed = reduceMotion ? 0.03 : lerp(0.35, 3.4, easeIn(thrust));
+      flight.frame(dt);
     }
-    els.core.style.opacity = lerp(0.45, 0.8, thrust).toFixed(3);
     els.vel.textContent = (0.99 * thrust * settle + 0.12 * (1 - settle)).toFixed(2);
 
     /* 2. title locks in: polished titanium, depth shadow, a short glow kick and lens flare */
@@ -426,11 +417,8 @@
   // belt and braces for browsers without overflow: clip — never let the stage scroll
   els.stage.addEventListener("scroll", () => { els.stage.scrollTop = 0; els.stage.scrollLeft = 0; });
 
-  addEventListener("resize", () => { vw = innerWidth; vh = innerHeight; space.resize(); fx.resize(); });
+  addEventListener("resize", () => { vw = innerWidth; vh = innerHeight; space.resize(); flight.resize(); fx.resize(); });
 
-  // start once the tunnel image is ready, so the opening frame isn't blank
-  const go = () => { restart(); requestAnimationFrame(render); };
-  const img = els.heroImg;
-  if (img.complete) go();
-  else { img.addEventListener("load", go, { once: true }); img.addEventListener("error", go, { once: true }); }
+  restart();
+  requestAnimationFrame(render);
 })();

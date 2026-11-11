@@ -1,8 +1,8 @@
 # Titanium 27 — Coming Soon
 
 The coming-soon page for **Titanium 2027**. It's one screen with a sci-fi
-intro that plays by itself on load: a warp-speed light tunnel shrinks into a
-cutout shaped like the **TITANIUM** letters, the letters turn polished silver,
+intro that plays by itself on load: you drift through a field of stars, speed up
+into hyperspace and fly into a cutout shaped like the **TITANIUM** letters, the letters turn polished silver,
 Earth rises from below, and **2027 · COMING SOON** fades in.
 
 It's plain HTML, CSS and JavaScript, with no framework, no build step and no dependencies.
@@ -11,13 +11,13 @@ It's plain HTML, CSS and JavaScript, with no framework, no build step and no dep
 
 ## What happens on screen
 
-The page holds on the station for 1.6 s, then plays a 6.5 s transition and
+The page holds on the starfield for 1.6 s, then plays a 6.5 s transition and
 stays on the final screen.
 
 | Time (approx.) | What you see |
 | --- | --- |
-| 0 – 1.6 s | First-person view down a warp tunnel through a helmet visor, with coordinates and a speed readout. You start to accelerate with a slow zero-g roll |
-| 1.7 – 4.7 s | Hyperspace streaks stretch as you speed up, and you fly into the TITANIUM letters. The move builds slowly, rushes through the middle and lands smoothly on the title |
+| 0 – 1.6 s | First-person view of deep space filled with stars drifting towards you, through a helmet visor, with coordinates and a speed readout. You start to accelerate with a slow zero-g roll |
+| 1.7 – 4.7 s | The stars stretch into hyperspace streaks as you speed up, and you fly into the TITANIUM letters. The move builds slowly, rushes through the middle and lands smoothly on the title |
 | 4.0 – 5.1 s | The letters turn to polished titanium (chrome band, blue sky reflection, moving highlight) |
 | 4.7 s | **Title lock:** a short lens flare and glow, and the stars drop out of warp |
 | 3.9 – 7.5 s | Earth rises with a sunrise on its limb, a layered blue atmosphere and drifting clouds, then a slow camera push-in |
@@ -25,7 +25,7 @@ stays on the final screen.
 | 5.2 – 7.5 s | **COMING SOON** fades in with a cyan → blue → violet gradient. One light pass crosses it as it lands, and a thin energy line draws out beneath |
 | After | Calm final frame: COMING SOON glows softly, nebula haze drifts, clouds move and the logo shine sweeps |
 
-- The intro waits for the tunnel image to load before it starts, so the opening is never blank.
+- The opening starfield is drawn live on a canvas, so there is no image to wait for.
 - Visitors with **Reduce motion** turned on in their system settings go straight to the final screen.
 - **Sound** is off by default because browsers block audio until the visitor interacts. The speaker button (bottom right) turns it on and replays the intro, so the audio lines up with the picture. Click again to mute.
 - The layout adapts to phones (logo, text and Earth are resized and repositioned below 640 px wide).
@@ -53,9 +53,9 @@ All sound is generated live in the browser with the Web Audio API, so there are 
 titanium-27/
 ├── index.html              Page markup (stage, Earth, logo cutout, HUD, text)
 ├── style.css               Layout, colours, nebula, Earth and clouds, silver fill, flare, HUD, film grade
-├── main.js                 Timeline, logo-cutout zoom, stars and dust, hyperspace streaks, sound
+├── main.js                 Timeline, logo-cutout zoom, opening starfield, background stars and dust, hyperspace streaks, sound
 └── assets/
-    ├── warp.webp           Warp-speed light tunnel (landscape, 2560×1440)
+    ├── warp.webp           Earlier warp-tunnel photo (not used right now)
     ├── station-wide.webp   Earlier space station view (not used right now)
     ├── logo-titanium.png   TITANIUM wordmark with transparent background (used as the cutout shape)
     ├── earth-surface.webp  Earth with the clouds softened (base layer)
@@ -107,7 +107,7 @@ It's a static site, so any static host works:
 | "COMING SOON" gradient colours | `.cs-title` in `style.css` **and** the `radial-gradient(...)` line for `csTitle` in `main.js` (the JS one animates it, so change both) |
 | Accent / glow colour | `--cyan` at the top of `style.css` |
 | HUD labels on the opening frame | `.hud` block in `index.html` |
-| Opening image (seen through the letters) | `src` of `#heroImg` and the `preload` link in `index.html` |
+| Opening starfield (density, brightness, speed) | `new Space($("heroStars"), count, dust, boost)` and `flight.speed` in `main.js` |
 | Logo or Earth image | swap the file in `assets/` and keep the same name |
 
 **Changing the logo:** the cutout is shaped by `assets/logo-titanium.png`, so it
@@ -131,6 +131,6 @@ Safari.
 
 - **Earth photo**: Apollo 17 "Blue Marble" (AS17-148-22727), NASA. Restored version by Toby Ord, from [tobyord.com/earth](https://www.tobyord.com/earth).
 - **Font**: [Michroma](https://fonts.google.com/specimen/Michroma) by Vernon Adams, served from Google Fonts (SIL Open Font License).
-- **Warp tunnel image**: "A purple and blue background with lines of light" by [Anton Filatov](https://unsplash.com/@antony123antony) on [Unsplash](https://unsplash.com/photos/a-purple-and-blue-background-with-lines-of-light-O_5SJuSOxZA), free to use under the Unsplash License (colour-graded with extra brightness, bloom and a bright core).
+- **Warp tunnel image** (earlier version, no longer shown): "A purple and blue background with lines of light" by [Anton Filatov](https://unsplash.com/@antony123antony) on [Unsplash](https://unsplash.com/photos/a-purple-and-blue-background-with-lines-of-light-O_5SJuSOxZA), free to use under the Unsplash License (colour-graded with extra brightness, bloom and a bright core).
 - **Station artwork and TITANIUM logo**: provided by the Titanium team.
 - **Transition idea**: based on the logo-mask transition from the Titanium 2026 site.
