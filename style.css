@@ -82,6 +82,9 @@ body {
   -webkit-text-fill-color: transparent;
   -webkit-text-stroke: max(1px, 0.024em) #f4fbff;
 }
+.cs-title {
+  font-variant-numeric: tabular-nums;
+}
 /* three dots after the words (out of the flow, so the words stay centred) */
 .dots {
   position: absolute; left: 100%; bottom: 0.3em;
