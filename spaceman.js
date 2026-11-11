@@ -216,24 +216,23 @@
         spacemanModel.rotation.y = 0.05;
         spacemanModel.rotation.x = 0.0;
 
-        // Dynamic wave oscillation: active side-to-side waving
+        // Dynamic wave oscillation: ONLY the palm/wrist moves side-to-side (hand/arm stays steady)
         const wave = Math.sin(time * 7.5); // rapid human waving tempo
-        const waveHand = wave * 0.48;       // ±27.5 degrees wrist wave left/right
-        const waveArm = wave * 0.20;        // ±11.5 degrees forearm lateral sway
+        const waveHand = wave * 0.52;       // ±30 degrees palm wave left/right
 
-        // Lift arm up and outward away from body
+        // Lift arm up and outward away from body - stationary
         if (bones.leftArm && initialRotations["LeftArm"]) {
           const init = initialRotations["LeftArm"];
           bones.leftArm.rotation.set(init.x + 1.0, init.y, init.z - 0.3);
         }
 
-        // Bend forearm upright to raise hand high, swaying left and right with wave
+        // Bend forearm upright to raise hand high - held completely steady (no arm sway)
         if (bones.leftForeArm && initialRotations["LeftForeArm"]) {
           const init = initialRotations["LeftForeArm"];
-          bones.leftForeArm.rotation.set(init.x, init.y + 0.5 + waveArm, init.z + 1.5 + waveArm * 0.6);
+          bones.leftForeArm.rotation.set(init.x, init.y + 0.5, init.z + 1.5);
         }
 
-        // Open palm directly facing screen, actively moving LEFT and RIGHT
+        // ONLY the palm is actively waving LEFT and RIGHT facing the screen
         if (bones.leftHand && initialRotations["LeftHand"]) {
           const init = initialRotations["LeftHand"];
           bones.leftHand.rotation.set(init.x + 0.5, init.y - 1.54, init.z + 0.2 + waveHand);
